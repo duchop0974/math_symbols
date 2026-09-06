@@ -26,16 +26,16 @@ Không có build step — toàn bộ là static file, host thẳng lên GitHub P
 
 ## Triển khai lên GitHub Pages
 
-1. Tạo repo GitHub tên `math-symbols` và push code lên nhánh `main`.
+1. Tạo repo GitHub tên `math_symbols` và push code lên nhánh `main`.
 2. Trong repo: **Settings → Pages → Source: Deploy from a branch → Branch: `main` / `(root)`**.
 3. Điền URL thật vào manifest:
 
 ```bash
-powershell -File set-host.ps1 -User <github-username> -Repo math-symbols
+powershell -File set-host.ps1 -User duchop0974 -Repo math_symbols
 ```
 
 4. Commit và push lại `manifest.xml` đã cập nhật.
-5. Kiểm tra `https://<github-username>.github.io/math-symbols/taskpane/taskpane.html` mở được trên trình duyệt.
+5. Kiểm tra `https://duchop0974.github.io/math_symbols/taskpane/taskpane.html` mở được trên trình duyệt.
 
 ## Cài vào Word (sideload từng máy)
 

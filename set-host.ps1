@@ -1,6 +1,6 @@
 param(
     [Parameter(Mandatory = $true)][string]$User,
-    [string]$Repo = "math-symbols"
+    [string]$Repo = "math_symbols"
 )
 
 $manifest = Join-Path $PSScriptRoot "manifest.xml"

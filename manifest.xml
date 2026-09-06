@@ -12,12 +12,12 @@
   <DefaultLocale>vi-VN</DefaultLocale>
   <DisplayName DefaultValue="Ký Hiệu Toán Học" />
   <Description DefaultValue="Chèn nhanh ký hiệu toán học và công thức Word Equation vào tài liệu." />
-  <IconUrl DefaultValue="https://YOUR-USERNAME.github.io/math-symbols/assets/icon-32.png" />
-  <HighResolutionIconUrl DefaultValue="https://YOUR-USERNAME.github.io/math-symbols/assets/icon-80.png" />
-  <SupportUrl DefaultValue="https://github.com/YOUR-USERNAME/math-symbols" />
+  <IconUrl DefaultValue="https://duchop0974.github.io/math_symbols/assets/icon-32.png" />
+  <HighResolutionIconUrl DefaultValue="https://duchop0974.github.io/math_symbols/assets/icon-80.png" />
+  <SupportUrl DefaultValue="https://github.com/duchop0974/math_symbols" />
 
   <AppDomains>
-    <AppDomain>https://YOUR-USERNAME.github.io</AppDomain>
+    <AppDomain>https://duchop0974.github.io</AppDomain>
   </AppDomains>
 
   <Hosts>
@@ -25,7 +25,7 @@
   </Hosts>
 
   <DefaultSettings>
-    <SourceLocation DefaultValue="https://YOUR-USERNAME.github.io/math-symbols/taskpane/taskpane.html" />
+    <SourceLocation DefaultValue="https://duchop0974.github.io/math_symbols/taskpane/taskpane.html" />
   </DefaultSettings>
 
   <Permissions>ReadWriteDocument</Permissions>
@@ -74,13 +74,13 @@
 
     <Resources>
       <bt:Images>
-        <bt:Image id="Icon.16x16" DefaultValue="https://YOUR-USERNAME.github.io/math-symbols/assets/icon-16.png" />
-        <bt:Image id="Icon.32x32" DefaultValue="https://YOUR-USERNAME.github.io/math-symbols/assets/icon-32.png" />
-        <bt:Image id="Icon.80x80" DefaultValue="https://YOUR-USERNAME.github.io/math-symbols/assets/icon-80.png" />
+        <bt:Image id="Icon.16x16" DefaultValue="https://duchop0974.github.io/math_symbols/assets/icon-16.png" />
+        <bt:Image id="Icon.32x32" DefaultValue="https://duchop0974.github.io/math_symbols/assets/icon-32.png" />
+        <bt:Image id="Icon.80x80" DefaultValue="https://duchop0974.github.io/math_symbols/assets/icon-80.png" />
       </bt:Images>
       <bt:Urls>
-        <bt:Url id="Taskpane.Url" DefaultValue="https://YOUR-USERNAME.github.io/math-symbols/taskpane/taskpane.html" />
-        <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://github.com/YOUR-USERNAME/math-symbols" />
+        <bt:Url id="Taskpane.Url" DefaultValue="https://duchop0974.github.io/math_symbols/taskpane/taskpane.html" />
+        <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://github.com/duchop0974/math_symbols" />
       </bt:Urls>
       <bt:ShortStrings>
         <bt:String id="Group.Label" DefaultValue="Ký Hiệu Toán" />
