@@ -12,8 +12,12 @@ Task pane add-in cho Microsoft Word (Windows) giúp chèn nhanh ký hiệu toán
 ## Cấu trúc
 
 ```
-manifest.xml          # Manifest add-in (cần sửa URL trước khi dùng)
-set-host.ps1          # Script tự động điền URL GitHub Pages vào manifest
+manifest.xml          # Manifest add-in
+set-host.ps1          # Script điền URL GitHub Pages vào manifest
+installer/
+  MathSymbols.iss     # Script Inno Setup tạo MathSymbolsSetup.exe
+  build.ps1           # Biên dịch bộ cài
+  Register-Addin.ps1  # Đăng ký/gỡ add-in bằng PowerShell (triển khai hàng loạt)
 assets/               # Icon add-in (16/32/64/80/128 px)
 taskpane/
   taskpane.html       # Giao diện task pane
@@ -37,14 +41,41 @@ powershell -File set-host.ps1 -User duchop0974 -Repo math_symbols
 4. Commit và push lại `manifest.xml` đã cập nhật.
 5. Kiểm tra `https://duchop0974.github.io/math_symbols/taskpane/taskpane.html` mở được trên trình duyệt.
 
-## Cài vào Word (sideload từng máy)
+## Cài vào Word bằng bộ cài
 
-1. Tạo một thư mục chia sẻ mạng (vd `\\server\WordAddins`), copy `manifest.xml` vào đó.
-2. Trên mỗi máy: Word → **File → Options → Trust Center → Trust Center Settings → Trusted Add-in Catalogs**, dán đường dẫn UNC của thư mục, tick **Show in Menu**, OK, khởi động lại Word.
-3. Word → **Insert → My Add-ins → SHARED FOLDER** → chọn **Ký Hiệu Toán Học**.
-4. Add-in xuất hiện dưới dạng nút **Bảng Ký Hiệu** trong nhóm **Ký Hiệu Toán** ở tab Home.
+Người dùng cuối chỉ cần chạy `MathSymbolsSetup.exe`:
 
-Nếu tổ chức dùng Microsoft 365 Admin Center, có thể dùng **Centralized Deployment** (Settings → Integrated apps → Upload custom apps) để đẩy add-in tới toàn bộ người dùng thay cho bước 1-3.
+1. Đóng Microsoft Word.
+2. Chạy `MathSymbolsSetup.exe` (cài theo từng user, **không cần quyền admin**).
+3. Mở Word → tab **Home** → nút **Add-ins** → mục **Developer Add-ins** → bấm **Ký Hiệu Toán Học**.
+4. Từ lần này trở đi, nút **Bảng Ký Hiệu** nằm sẵn ở tab Home.
+
+Bước 3 chỉ phải làm một lần trên mỗi máy: Word nạp manifest ngay khi khởi động, nhưng chỉ gắn nút lên ribbon sau lần mở đầu tiên.
+
+Gỡ cài đặt: **Settings → Apps → Ký Hiệu Toán Học → Uninstall** (bộ cài tự xoá khoá registry đã ghi).
+
+Add-in tải giao diện từ GitHub Pages nên **máy cần có Internet** khi dùng.
+
+### Cách bộ cài hoạt động
+
+- Copy `manifest.xml` vào `%LOCALAPPDATA%\MathSymbolsAddin\`.
+- Ghi một giá trị `REG_SZ` vào `HKCU\SOFTWARE\Microsoft\Office\16.0\WEF\Developer`: tên = `<Id>` trong manifest, dữ liệu = đường dẫn manifest. Đây chính là cơ chế mà công cụ sideload chính thức của Microsoft (`office-addin-dev-settings`) dùng.
+
+Muốn triển khai hàng loạt không qua giao diện, dùng `installer\Register-Addin.ps1` (có tham số `-Uninstall`) hoặc chạy `MathSymbolsSetup.exe /SILENT`.
+
+### Build lại bộ cài
+
+Cần [Inno Setup 6](https://jrsoftware.org/isinfo.php) (`winget install --id JRSoftware.InnoSetup`):
+
+```powershell
+powershell -File installer\build.ps1
+```
+
+Kết quả: `dist\MathSymbolsSetup.exe`.
+
+### Lựa chọn thay thế
+
+Nếu tổ chức dùng Microsoft 365 Admin Center, có thể dùng **Centralized Deployment** (Settings → Integrated apps → Upload custom apps) để đẩy add-in tới toàn bộ người dùng mà không cần chạy bộ cài trên từng máy.
 
 ## Phát triển cục bộ
 
