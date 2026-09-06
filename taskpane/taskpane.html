@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ký Hiệu Toán Học</title>
+  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+  <link rel="stylesheet" href="taskpane.css" />
+</head>
+<body>
+  <div id="app" class="hidden">
+    <div class="search-bar">
+      <input type="text" id="search" placeholder="Tìm ký hiệu... (vd: alpha, integral)" />
+    </div>
+
+    <div class="tabs" id="tabs"></div>
+
+    <div id="favorites-section" class="category hidden">
+      <h3>★ Yêu thích</h3>
+      <div id="favorites-grid" class="grid"></div>
+    </div>
+
+    <div id="panel" class="category"></div>
+
+    <div id="toast" class="toast hidden"></div>
+  </div>
+
+  <div id="loading">Đang tải Office.js...</div>
+
+  <script src="symbols.js"></script>
+  <script src="taskpane.js"></script>
+</body>
+</html>
