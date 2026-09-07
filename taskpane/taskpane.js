@@ -151,10 +151,18 @@
     }
 
     const category = SYMBOL_CATEGORIES.find((c) => c.name === activeCategory);
+    const isTemplates = category.items.some((i) => i.type === 'omml');
     panel.innerHTML = `<h3>${category.name}</h3>`;
+    if (isTemplates) {
+      const hint = document.createElement('p');
+      hint.className = 'hint';
+      hint.textContent =
+        'Công thức chèn ra có ô trống — bấm vào ô để gõ số, nhấn Tab để nhảy sang ô kế. Đặt con trỏ trong một ô rồi bấm mẫu khác để lồng công thức vào nhau.';
+      panel.appendChild(hint);
+    }
     const grid = document.createElement('div');
     panel.appendChild(grid);
-    renderGrid(grid, category.items, category.items.some((i) => i.type === 'omml'));
+    renderGrid(grid, category.items, isTemplates);
   }
 
   function start(word) {
