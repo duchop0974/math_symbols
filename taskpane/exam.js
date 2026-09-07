@@ -69,15 +69,21 @@ function spacingXml(opts) {
 }
 
 function para(runsXml, opts = {}) {
+  // Dấu kết đoạn chỉ mang phông và cỡ chữ, cố tình bỏ đậm/nghiêng: nếu nó đậm
+  // thì giáo viên gõ tiếp ở cuối đoạn sẽ ra chữ đậm ngoài ý muốn.
   const ppr =
     spacingXml(opts) +
     (opts.ind ? `<w:ind w:left="${opts.ind}"/>` : '') +
     (opts.jc ? `<w:jc w:val="${opts.jc}"/>` : '') +
-    `<w:rPr>${fontProps(opts)}</w:rPr>`;
+    `<w:rPr>${fontProps({ size: opts.size })}</w:rPr>`;
   return `<w:p><w:pPr>${ppr}</w:pPr>${runsXml}</w:p>`;
 }
 
 const textPara = (content, opts = {}) => para(run(content, opts), opts);
+
+// "Câu 1." in đậm rồi một dấu cách thường: gõ tiếp sau đó ra chữ không đậm.
+const stemPara = (label, opts = {}) =>
+  para(run(label, { ...opts, bold: true }) + run(' ', { size: opts.size }), opts);
 
 // Đoạn trống vẫn phải mang phông, nên không dùng <w:p/> trần.
 const emptyPara = (opts) => para('', opts);
@@ -221,7 +227,7 @@ const MC_LABELS = ['A.', 'B.', 'C.', 'D.'];
 const TF_LABELS = ['a)', 'b)', 'c)', 'd)'];
 
 function multipleChoice(no, cols) {
-  const stem = textPara(`Câu ${no}. `, { bold: true, spaceAfter: 0 });
+  const stem = stemPara(`Câu ${no}.`, { spaceAfter: 0 });
   if (cols === 1) {
     const lines = MC_LABELS.map((l) => textPara(`${l} `, { ind: 284, spaceAfter: 0 }));
     return stem + lines.join('') + emptyPara();
@@ -237,14 +243,14 @@ function multipleChoice(no, cols) {
 
 function trueFalse(no) {
   return (
-    textPara(`Câu ${no}. `, { bold: true, spaceAfter: 0 }) +
+    stemPara(`Câu ${no}.`, { spaceAfter: 0 }) +
     TF_LABELS.map((l) => textPara(`${l} `, { ind: 284, spaceAfter: 0 })).join('') +
     emptyPara()
   );
 }
 
 function shortAnswer(no) {
-  return textPara(`Câu ${no}. `, { bold: true, spaceAfter: 0 }) + emptyPara();
+  return stemPara(`Câu ${no}.`, { spaceAfter: 0 }) + emptyPara();
 }
 
 const SUB_LABELS = ['a)', 'b)', 'c)', 'd)', 'e)'];
@@ -253,7 +259,7 @@ const SUB_LABELS = ['a)', 'b)', 'c)', 'd)', 'e)'];
 function essayQuestion(no, opts) {
   const diem = (opts && opts.diem) || '2,0';
   const subs = (opts && opts.subs) || 0;
-  let out = textPara(`Câu ${no} (${diem} điểm). `, { bold: true, spaceAfter: 0 });
+  let out = stemPara(`Câu ${no} (${diem} điểm).`, { spaceAfter: 0 });
   for (let i = 0; i < subs; i += 1) {
     out += textPara(`${SUB_LABELS[i]} `, { ind: 284, spaceAfter: 0 });
   }
@@ -429,6 +435,8 @@ function variationTable(cfg) {
 }
 
 // ------------------------------------------------- các khối chèn được (gói OPC)
+
+const gradingTable = (rowCount, withSub) => wrapBody(gradingBody(rowCount, withSub));
 
 const examHeader = (f) => wrapBody(examHeaderBody(f));
 const examFooter = () => wrapBody(examFooterBody());
