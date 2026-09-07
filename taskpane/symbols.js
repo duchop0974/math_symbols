@@ -21,13 +21,11 @@ const DOC_TYPE =
 
 function wrapOMath(inner) {
   return (
-    '<?xml version="1.0" standalone="yes"?>' +
-    '<?mso-application progid="Word.Document"?>' +
     `<pkg:package xmlns:pkg="${PKG_NS}">` +
     '<pkg:part pkg:name="/_rels/.rels" ' +
     'pkg:contentType="application/vnd.openxmlformats-package.relationships+xml" pkg:padding="512">' +
     `<pkg:xmlData><Relationships xmlns="${RELS_NS}">` +
-    `<Relationship Id="rId1" Type="${DOC_REL}" Target="word/document.xml"/>` +
+    `<Relationship Id="rId1" Type="${DOC_REL}" Target="/word/document.xml"/>` +
     '</Relationships></pkg:xmlData></pkg:part>' +
     `<pkg:part pkg:name="/word/document.xml" pkg:contentType="${DOC_TYPE}">` +
     `<pkg:xmlData><w:document ${W_NS} ${MATH_NS}><w:body>` +
