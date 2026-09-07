@@ -502,3 +502,86 @@ table.bbt tr.tall td:last-of-type { border-right: 1px solid var(--border); }
   font-size: 12px;
   font-weight: 600;
 }
+
+/* Trình soạn các phần của đề — mỗi phần một khối hai dòng cho vừa task pane hẹp. */
+.parts { margin-bottom: 6px; }
+
+.part-item {
+  margin-bottom: 5px;
+  padding: 5px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.part-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.part-no {
+  min-width: 22px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.part-row select {
+  flex: 1;
+  min-width: 0;
+  padding: 3px 4px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: inherit;
+  font-size: 11px;
+}
+
+.part-row select.tiny { flex: 0 0 62px; }
+
+input.tiny {
+  width: 44px;
+  padding: 3px 4px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: inherit;
+  font-size: 11px;
+}
+
+.tiny-label {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.part-title {
+  width: 100%;
+  margin-top: 4px;
+  padding: 3px 5px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: inherit;
+  font-size: 11px;
+}
+
+.part-title::placeholder { font-style: italic; opacity: 0.7; }
+
+button.icon {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+button.icon:hover { border-color: var(--accent); color: var(--accent); background: var(--hover); }

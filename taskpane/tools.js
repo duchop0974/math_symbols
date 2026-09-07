@@ -165,6 +165,53 @@ const num = (id, fallback) => {
 // ---------------------------------------------------------------- tab Đề thi
 
 const STYLE_KEY = 'mathSymbols.examStyle';
+const PARTS_KEY = 'mathSymbols.parts';
+
+const KIND_OPTIONS = [
+  ['mc', 'Trắc nghiệm A–D'],
+  ['tf', 'Đúng / Sai'],
+  ['sa', 'Trả lời ngắn'],
+  ['tl', 'Tự luận'],
+];
+
+// Nhãn gọn cho dòng tóm tắt — không viết thường nhãn dropdown vì "A–D" sẽ thành "a–d".
+const KIND_SHORT = {
+  mc: 'trắc nghiệm',
+  tf: 'đúng/sai',
+  sa: 'trả lời ngắn',
+  tl: 'tự luận',
+};
+
+// Mặc định: đề trắc nghiệm theo cấu trúc Bộ GD&ĐT từ 2025 (12 – 4 – 6), đề tự
+// luận là một mạch câu không chia phần nên tiêu đề để rỗng.
+function defaultParts(style) {
+  if (style === 'tl') return [{ kind: 'tl', count: 9, diem: '2,0', subs: 0 }];
+  return [
+    { kind: 'mc', count: 12, cols: 2 },
+    { kind: 'tf', count: 4 },
+    { kind: 'sa', count: 6 },
+  ];
+}
+
+function loadParts(style) {
+  try {
+    const saved = JSON.parse(localStorage.getItem(PARTS_KEY));
+    if (saved && Array.isArray(saved[style]) && saved[style].length) return saved[style];
+  } catch {
+    // hỏng localStorage thì quay về mặc định
+  }
+  return defaultParts(style);
+}
+
+function saveParts(style, parts) {
+  try {
+    const all = JSON.parse(localStorage.getItem(PARTS_KEY)) || {};
+    all[style] = parts;
+    localStorage.setItem(PARTS_KEY, JSON.stringify(all));
+  } catch {
+    // không lưu được thì chỉ mất phần nhớ giữa các lần mở
+  }
+}
 
 // Ô nào chỉ dùng cho một kiểu đề thì đánh dấu bằng `only`.
 const HEADER_FIELDS = [
@@ -270,6 +317,13 @@ function renderExamPanel(panel) {
     (e) => {
       style = e.target.value;
       saveStyle(style);
+      parts = loadParts(style);
+      // Đề Bộ đánh số lại từ 1 mỗi phần; đề tự luận thường đánh liên tục cả đề.
+      const cont = document.getElementById('skel-continuous');
+      if (cont) cont.checked = style === 'tl';
+      const titles = document.getElementById('skel-titles');
+      if (titles) titles.checked = style === 'tn';
+      renderParts();
       applyStyle();
     }
   );
@@ -305,36 +359,8 @@ function renderExamPanel(panel) {
     )
   );
 
-  // Đề Bộ đánh số lại từ câu 1 ở mỗi phần, nên chèn tiêu đề phần thì đưa ô
-  // "Bắt đầu từ câu" về 1 luôn cho khỏi phải sửa tay.
-  const insertPart = (which) => {
-    const count = Math.max(1, num(`part-${which}`, SECTION_COUNTS[which]));
-    Pane.insertOoxml(
-      sectionHeading(which, count, val('part-wording') === 'brief'),
-      `Đã chèn tiêu đề Phần ${'I'.repeat(which)}`
-    );
-    const startBox = document.getElementById('q-start');
-    if (startBox) startBox.value = '1';
-  };
-
-  const wordingSel = select(
-    [
-      ['full', 'Đầy đủ (có nêu tên dạng câu)'],
-      ['brief', 'Ngắn gọn'],
-    ],
-    'full'
-  );
-  wordingSel.id = 'part-wording';
-
-  const skelCols = select(
-    [
-      ['2', '2 cột'],
-      ['1', '1 cột'],
-      ['4', '4 cột'],
-    ],
-    '2'
-  );
-  skelCols.id = 'skel-cols';
+  // Danh sách phần tự thêm/bớt: mỗi phần tự chọn dạng câu, số câu và tiêu đề.
+  let parts = loadParts(style);
 
   const check = (id, checked) => {
     const box = h('input', { id, type: 'checkbox' });
@@ -342,45 +368,101 @@ function renderExamPanel(panel) {
     return box;
   };
 
-  // Mọi thứ quyết định khung đề nằm gọn ở đây, và tóm tắt cập nhật theo từng ô
-  // để thấy trước sẽ dựng ra cái gì rồi mới bấm.
-  const skelRows = {
-    header: fieldRow('Kèm đầu đề thi', check('skel-header', true)),
-    wording: fieldRow('Câu chữ tiêu đề phần', wordingSel),
-    p1: fieldRow('Phần I — trắc nghiệm', input('part-1', '12', { type: 'number', min: 0, max: 99 })),
-    p2: fieldRow('Phần II — đúng/sai', input('part-2', '4', { type: 'number', min: 0, max: 99 })),
-    p3: fieldRow('Phần III — trả lời ngắn', input('part-3', '6', { type: 'number', min: 0, max: 99 })),
-    cols: fieldRow('Xếp phương án', skelCols),
-    essay: fieldRow('Số câu tự luận', input('part-essay', '9', { type: 'number', min: 0, max: 60 })),
-    diem: fieldRow('Điểm mỗi câu', input('skel-diem', '2,0', { placeholder: '2,0' })),
-    subs: fieldRow('Số ý mỗi câu', input('skel-subs', '0', { type: 'number', min: 0, max: 5 })),
-    footer: fieldRow('Kèm dòng kết đề', check('skel-footer', true)),
-  };
-  ['p1', 'p2', 'p3', 'cols', 'wording'].forEach((k) => {
-    skelRows[k].dataset.only = 'tn';
-  });
-  ['essay', 'diem', 'subs'].forEach((k) => {
-    skelRows[k].dataset.only = 'tl';
-  });
+  const partsBox = h('div', { id: 'skel-parts', class: 'parts' });
+
+  function partExtras(part, i) {
+    if (part.kind === 'tl') {
+      const diem = input('', part.diem || '2,0', { placeholder: '2,0' });
+      diem.className = 'tiny';
+      diem.addEventListener('input', () => {
+        part.diem = diem.value;
+        touchParts();
+      });
+      const subs = input('', String(part.subs || 0), { type: 'number', min: 0, max: 5 });
+      subs.className = 'tiny';
+      subs.addEventListener('input', () => {
+        part.subs = parseInt(subs.value, 10) || 0;
+        touchParts();
+      });
+      return [h('span', { class: 'tiny-label', text: 'điểm' }), diem,
+              h('span', { class: 'tiny-label', text: 'ý' }), subs];
+    }
+    if (part.kind !== 'mc') return [];
+    const cols = select([['2', '2 cột'], ['1', '1 cột'], ['4', '4 cột']], String(part.cols || 2), (e) => {
+      part.cols = parseInt(e.target.value, 10);
+      touchParts();
+    });
+    cols.className = 'tiny';
+    return [cols];
+  }
+
+  function renderParts() {
+    partsBox.innerHTML = '';
+    parts.forEach((part, i) => {
+      const kindSel = select(KIND_OPTIONS, part.kind, (e) => {
+        part.kind = e.target.value;
+        renderParts();
+        touchParts();
+      });
+      const count = input('', String(part.count), { type: 'number', min: 0, max: 99 });
+      count.className = 'tiny';
+      count.addEventListener('input', () => {
+        part.count = parseInt(count.value, 10) || 0;
+        touchParts();
+      });
+
+      const row = h('div', { class: 'part-row' }, [
+        h('span', { class: 'part-no', text: ROMAN[i] || String(i + 1) }),
+        kindSel,
+        count,
+        h('span', { class: 'tiny-label', text: 'câu' }),
+      ].concat(partExtras(part, i)).concat([
+        h('button', {
+          class: 'icon', text: '⤓', title: 'Chỉ chèn riêng phần này',
+          onclick: () =>
+            Pane.insertOoxml(
+              partBlock(part, i, 1, briefOn(), titlesOn()),
+              `Đã chèn phần ${ROMAN[i] || i + 1}`
+            ),
+        }),
+        h('button', {
+          class: 'icon', text: '✕', title: 'Bỏ phần này',
+          onclick: () => { parts.splice(i, 1); renderParts(); touchParts(); },
+        }),
+      ]));
+
+      // Tiêu đề để trống nghĩa là không chèn dòng tiêu đề phần; bỏ trắng ô thì
+      // quay lại câu chữ tự sinh theo chuẩn.
+      const title = h('input', {
+        type: 'text', class: 'part-title',
+        placeholder: 'Tiêu đề tự sinh theo chuẩn — gõ để thay bằng chữ của mình',
+      });
+      title.value = part.title || '';
+      title.addEventListener('input', () => {
+        part.title = title.value.trim();
+        touchParts();
+      });
+
+      partsBox.appendChild(h('div', { class: 'part-item' }, [row, title]));
+    });
+  }
+
+  const briefOn = () => !!(document.getElementById('skel-brief') || {}).checked;
+  const titlesOn = () => (document.getElementById('skel-titles') || {}).checked !== false;
+
+  function touchParts() {
+    saveParts(style, parts);
+    skelSummary();
+  }
 
   function skelConfig() {
-    const header = (document.getElementById('skel-header') || {}).checked !== false;
-    const footer = !!(document.getElementById('skel-footer') || {}).checked;
-    if (style === 'tl') {
-      return {
-        header,
-        footer,
-        essayCount: Math.max(0, num('part-essay', 9)),
-        diem: val('skel-diem').trim() || '2,0',
-        subs: num('skel-subs', 0),
-      };
-    }
     return {
-      header,
-      footer,
-      counts: { 1: num('part-1', 12), 2: num('part-2', 4), 3: num('part-3', 6) },
-      cols: num('skel-cols', 2),
-      brief: val('part-wording') === 'brief',
+      header: (document.getElementById('skel-header') || {}).checked !== false,
+      footer: !!(document.getElementById('skel-footer') || {}).checked,
+      continuous: !!(document.getElementById('skel-continuous') || {}).checked,
+      brief: briefOn(),
+      titles: titlesOn(),
+      parts,
     };
   }
 
@@ -390,30 +472,47 @@ function renderExamPanel(panel) {
     const cfg = skelConfig();
     const bits = [];
     if (cfg.header) bits.push('đầu đề');
-    if (style === 'tl') {
-      if (cfg.essayCount) bits.push(`${cfg.essayCount} câu tự luận (${cfg.diem} điểm${cfg.subs ? `, ${cfg.subs} ý` : ''})`);
-    } else {
-      const parts = [1, 2, 3].filter((w) => cfg.counts[w]);
-      parts.forEach((w) => bits.push(`Phần ${'I'.repeat(w)} ${cfg.counts[w]} câu`));
-    }
+    parts.forEach((p, i) => {
+      if (!p.count) return;
+      bits.push(`Phần ${ROMAN[i] || i + 1} ${p.count} câu ${KIND_SHORT[p.kind] || p.kind}`);
+    });
     if (cfg.footer) bits.push('dòng kết đề');
-    const total =
-      style === 'tl' ? cfg.essayCount : [1, 2, 3].reduce((a, w) => a + cfg.counts[w], 0);
+    const total = parts.reduce((a, p) => a + (p.count || 0), 0);
     box.textContent = bits.length
-      ? `Sẽ dựng: ${bits.join(' + ')} — tổng ${total} câu.`
+      ? `Sẽ dựng: ${bits.join(' + ')} — tổng ${total} câu, đánh số ${
+          cfg.continuous ? 'liên tục cả đề' : 'lại từ 1 mỗi phần'
+        }.`
       : 'Chưa chọn gì để dựng.';
   }
 
   const skelSection = section(
     'Dựng cả khung đề',
-    Object.values(skelRows).concat([
+    [
+      fieldRow('Kèm đầu đề thi', check('skel-header', true)),
+      fieldRow('Kèm dòng kết đề', check('skel-footer', true)),
+      fieldRow('Đánh số liên tục cả đề', check('skel-continuous', style === 'tl')),
+      fieldRow('Có tiêu đề phần', check('skel-titles', style === 'tn')),
+      fieldRow('Tiêu đề phần ngắn gọn', check('skel-brief', false)),
+      h('div', { class: 'sub-head', text: 'Các phần của đề' }),
+      partsBox,
+      h('div', { class: 'btn-row' }, [
+        button('+ Thêm phần', () => {
+          parts.push({ kind: 'mc', count: 10, cols: 2 });
+          renderParts();
+          touchParts();
+        }),
+        button('Khôi phục mặc định', () => {
+          parts = defaultParts(style);
+          renderParts();
+          touchParts();
+        }),
+      ]),
       h('p', { id: 'skel-summary', class: 'measure' }),
       button(
         'Dựng vào Word',
         () => {
           const cfg = skelConfig();
-          const total =
-            style === 'tl' ? cfg.essayCount : [1, 2, 3].reduce((a, w) => a + cfg.counts[w], 0);
+          const total = parts.reduce((a, p) => a + (p.count || 0), 0);
           if (!total && !cfg.header && !cfg.footer) {
             Pane.toast('Chưa chọn phần nào để dựng.', true);
             return;
@@ -422,25 +521,29 @@ function renderExamPanel(panel) {
         },
         true
       ),
-      h('div', { class: 'sub-head', text: 'Hoặc chèn riêng tiêu đề từng phần', 'data-only': 'tn' }),
-      h('div', { class: 'btn-row', 'data-only': 'tn' }, [
-        button('PHẦN I', () => insertPart(1)),
-        button('PHẦN II', () => insertPart(2)),
-        button('PHẦN III', () => insertPart(3)),
-      ]),
       note(
-        'Câu chữ tiêu đề phần lấy theo đề tham khảo của Bộ GD&ĐT từ 2025 (Toán: 12 – 4 – 6 câu). ' +
-          'Mỗi phần đánh số lại từ câu 1. Để 0 câu thì phần đó bị bỏ qua hẳn.'
+        'Thêm bao nhiêu phần cũng được, mỗi phần tự chọn dạng câu và số câu. Ô tiêu đề để ' +
+          'trống thì dùng câu chữ tự sinh theo đề Bộ GD&ĐT từ 2025; gõ vào để thay bằng chữ ' +
+          'của mình. Nút ⤓ chèn riêng một phần.'
       ),
-    ]),
+    ],
     true
   );
-  skelSection.addEventListener('input', skelSummary);
   skelSection.addEventListener('change', skelSummary);
   panel.appendChild(skelSection);
+  renderParts();
 
   const startRow = fieldRow('Bắt đầu từ câu', input('q-start', '1', { type: 'number', min: 1 }));
   const countRow = fieldRow('Số câu chèn', input('q-count', '5', { type: 'number', min: 1, max: 100 }));
+
+  const qCols = select([['2', '2 cột'], ['1', '1 cột'], ['4', '4 cột']], '2');
+  qCols.id = 'q-cols';
+  const colsRow = fieldRow('Xếp phương án', qCols);
+  colsRow.dataset.only = 'tn';
+  const diemRow = fieldRow('Điểm mỗi câu', input('q-diem', '2,0', { placeholder: '2,0' }));
+  diemRow.dataset.only = 'tl';
+  const subsRow = fieldRow('Số ý mỗi câu', input('q-subs', '0', { type: 'number', min: 0, max: 5 }));
+  subsRow.dataset.only = 'tl';
   const advance = (start, count) => {
     const startBox = document.getElementById('q-start');
     if (startBox) startBox.value = String(start + count);
@@ -452,13 +555,13 @@ function renderExamPanel(panel) {
 
   const insertQuestions = (kind, label) => {
     const { start, count } = range();
-    Pane.insertOoxml(questionBlock(kind, start, count, num('skel-cols', 2)), `Đã chèn ${count} ${label}`);
+    Pane.insertOoxml(questionBlock(kind, start, count, num('q-cols', 2)), `Đã chèn ${count} ${label}`);
     advance(start, count);
   };
 
   const insertEssay = () => {
     const { start, count } = range();
-    const opts = { diem: val('skel-diem').trim() || '2,0', subs: num('skel-subs', 0) };
+    const opts = { diem: val('q-diem').trim() || '2,0', subs: num('q-subs', 0) };
     Pane.insertOoxml(essayBlock(start, count, opts), `Đã chèn ${count} câu tự luận`);
     advance(start, count);
   };
@@ -489,7 +592,7 @@ function renderExamPanel(panel) {
   panel.appendChild(
     section(
       'Chèn câu hỏi',
-      [startRow, countRow, essayButtons, mcButtons],
+      [startRow, countRow, colsRow, diemRow, subsRow, essayButtons, mcButtons],
       true
     )
   );

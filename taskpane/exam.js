@@ -200,34 +200,32 @@ function examFooterBody() {
 // Câu chữ lấy đúng theo đề tham khảo/chính thức của Bộ GD&ĐT từ 2025. Lưu ý mỗi
 // phần đánh số lại từ câu 1, không đánh số liên tục qua cả ba phần.
 // Số câu mặc định theo đề Toán tốt nghiệp THPT: 12 – 4 – 6.
-const SECTION_COUNTS = { 1: 12, 2: 4, 3: 6 };
-
-// Đề thật dùng hai biến thể: bản đầy đủ có nêu tên dạng câu hỏi, bản ngắn thì bỏ.
-const SECTION_KIND = {
-  1: 'Câu trắc nghiệm nhiều phương án lựa chọn.',
-  2: 'Câu trắc nghiệm đúng sai.',
-  3: 'Câu trắc nghiệm trả lời ngắn.',
+// Câu chữ lấy đúng theo đề tham khảo/chính thức của Bộ GD&ĐT từ 2025, nhưng số
+// phần và dạng câu của mỗi phần là do người dùng đặt chứ không cố định.
+const KIND_TEXT = {
+  mc: {
+    name: 'Câu trắc nghiệm nhiều phương án lựa chọn.',
+    tail: ' Mỗi câu hỏi thí sinh chỉ chọn một phương án.',
+  },
+  tf: {
+    name: 'Câu trắc nghiệm đúng sai.',
+    tail: ' Trong mỗi ý a), b), c), d) ở mỗi câu, thí sinh chọn đúng hoặc sai.',
+  },
+  sa: { name: 'Câu trắc nghiệm trả lời ngắn.', tail: '' },
+  tl: { name: 'Tự luận.', tail: '' },
 };
 
-const SECTION_TAIL = {
-  1: ' Mỗi câu hỏi thí sinh chỉ chọn một phương án.',
-  2: ' Trong mỗi ý a), b), c), d) ở mỗi câu, thí sinh chọn đúng hoặc sai.',
-  3: '',
-};
+const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
 
-const ROMAN = { 1: 'I', 2: 'II', 3: 'III' };
-
-function sectionText(which, count, brief) {
-  const n = count || SECTION_COUNTS[which];
-  const kind = brief ? '' : `${SECTION_KIND[which]} `;
-  return (
-    `PHẦN ${ROMAN[which]}. ${kind}Thí sinh trả lời từ câu 1 đến câu ${n}.` +
-    SECTION_TAIL[which]
-  );
-}
-
-function sectionPara(which, count, brief) {
-  return textPara(sectionText(which, count, brief), { bold: true });
+// index tính từ 0; from/to là số câu thật sự của phần, phụ thuộc cách đánh số.
+function partTitle(index, kind, from, to, brief) {
+  const k = KIND_TEXT[kind] || KIND_TEXT.mc;
+  const kindText = brief ? '' : `${k.name} `;
+  const range =
+    from === to
+      ? `Thí sinh trả lời câu ${from}.`
+      : `Thí sinh trả lời từ câu ${from} đến câu ${to}.`;
+  return `PHẦN ${ROMAN[index] || index + 1}. ${kindText}${range}${k.tail}`;
 }
 
 const MC_LABELS = ['A.', 'B.', 'C.', 'D.'];
@@ -445,28 +443,37 @@ function variationTable(cfg) {
 
 const examHeader = (f, style) => wrapBody(examHeaderBody(f, style));
 const examFooter = () => wrapBody(examFooterBody());
-const sectionHeading = (which, count, brief) => wrapBody(sectionPara(which, count, brief));
-const questionBlock = (kind, start, count, cols) => wrapBody(questionBody(kind, start, count, cols));
-const essayBlock = (start, count, opts) => wrapBody(essayBody(start, count, opts));
+// Một phần của đề: dạng câu, số câu, tiêu đề (rỗng = không chèn tiêu đề).
+// part = { kind, count, cols, diem, subs, title }
+function partBody(part, index, from, brief, withTitle) {
+  const to = from + part.count - 1;
+  // Ô tiêu đề để trống nghĩa là dùng câu chữ tự sinh theo chuẩn; muốn bỏ hẳn
+  // dòng tiêu đề thì tắt ở mức cả đề (withTitle = false).
+  const title = part.title || partTitle(index, part.kind, from, to, brief);
+  const head = withTitle === false ? '' : textPara(title, { bold: true });
+  const body =
+    part.kind === 'tl'
+      ? essayBody(from, part.count, { diem: part.diem, subs: part.subs })
+      : questionBody(part.kind, from, part.count, part.cols || 2);
+  return head + body;
+}
 
-// Mỗi phần của đề trắc nghiệm dùng một dạng câu hỏi cố định theo cấu trúc từ 2025.
-const PART_KIND = { 1: 'mc', 2: 'tf', 3: 'sa' };
+const partBlock = (part, index, from, brief, withTitle) =>
+  wrapBody(partBody(part, index, from, brief, withTitle));
 
-// Dựng cả bộ xương của đề trong MỘT gói: đầu đề, các phần, đủ số câu, dòng kết.
-// Chèn một lần nhanh hơn hẳn bấm lần lượt, và Word chỉ phải nhận một gói OOXML.
+// Dựng cả bộ xương của đề trong MỘT gói: đầu đề, các phần theo đúng danh sách
+// người dùng đặt, rồi dòng kết. Chèn một lần nhanh hơn hẳn bấm lần lượt.
+// cfg = { header, footer, continuous, brief, parts: [...] }
 function examSkeleton(f, style, cfg) {
   let out = cfg.header === false ? '' : examHeaderBody(f, style);
+  let no = 1;
 
-  if (style === 'tl') {
-    out += essayBody(1, cfg.essayCount, { diem: cfg.diem, subs: cfg.subs });
-  } else {
-    // Phần nào để 0 câu thì bỏ qua hẳn, không chèn cả tiêu đề phần.
-    [1, 2, 3].forEach((which) => {
-      const n = cfg.counts[which];
-      if (!n) return;
-      out += sectionPara(which, n, cfg.brief) + questionBody(PART_KIND[which], 1, n, cfg.cols);
-    });
-  }
+  cfg.parts.forEach((part, i) => {
+    if (!part.count) return;
+    out += partBody(part, i, no, cfg.brief, cfg.titles);
+    // Đề Bộ đánh số lại từ 1 ở mỗi phần; đề tự luận thường đánh liên tục cả đề.
+    no = cfg.continuous ? no + part.count : 1;
+  });
 
   if (cfg.footer) out += examFooterBody();
   return wrapBody(out);

@@ -11,7 +11,18 @@ Trên cùng là **thanh nút nhanh** dính theo màn hình, luôn thấy dù đa
 - ô số câu + kiểu câu + nút **+ Chèn** — chèn câu tiếp theo rồi tự tăng số, đồng bộ với ô "Bắt đầu từ câu" của tab Đề thi;
 - hàng ký hiệu **vừa dùng và đánh dấu ★** — chèn lại công thức mà không phải rời tab đang làm.
 
-Mục **Dựng cả khung đề** gom mọi tuỳ chọn về một chỗ và hiện **dòng tóm tắt cập nhật ngay theo từng ô** — *"Sẽ dựng: đầu đề + Phần I 12 câu + Phần II 4 câu + Phần III 6 câu + dòng kết đề — tổng 22 câu."* — nên biết trước sẽ ra gì rồi mới bấm **Dựng vào Word**. Chỉnh được: có kèm đầu đề không, số câu từng phần (để 0 là bỏ hẳn phần đó), cách xếp phương án, câu chữ tiêu đề phần, có kèm dòng kết không; với đề tự luận là số câu, điểm mỗi câu và số ý.
+Mục **Dựng cả khung đề** là một danh sách phần tự thêm/bớt — không cố định ba phần:
+
+| | |
+|---|---|
+| Số phần | thêm/bớt tuỳ ý, đánh số La Mã tự cập nhật |
+| Mỗi phần | tự chọn dạng câu (trắc nghiệm A–D / đúng-sai / trả lời ngắn / tự luận), số câu, số cột phương án hoặc điểm và số ý |
+| Tiêu đề phần | để trống thì tự sinh theo câu chữ đề Bộ GD&ĐT từ 2025, gõ vào để thay bằng chữ của mình; tắt hẳn bằng ô *Có tiêu đề phần* |
+| Đánh số | lại từ 1 mỗi phần (chuẩn đề Bộ) hoặc liên tục cả đề |
+| Đầu đề, dòng kết | bật/tắt riêng |
+| Nút ⤓ | chèn riêng một phần |
+
+Dòng tóm tắt cập nhật ngay theo từng ô — *"Sẽ dựng: đầu đề + Phần I 12 câu trắc nghiệm + Phần II 4 câu đúng/sai + Phần III 6 câu trả lời ngắn + dòng kết đề — tổng 22 câu, đánh số lại từ 1 mỗi phần."* — nên biết trước sẽ ra gì rồi mới bấm **Dựng vào Word**. Cấu hình được nhớ riêng cho từng kiểu đề.
 
 - 6 nhóm ký hiệu Unicode: Hy Lạp, Toán tử, Tập hợp, Logic, Mũi tên, Giải tích — click để chèn vào vị trí con trỏ.
 - 65 mẫu công thức OMML chia 5 nhóm — chèn thành Equation Object thật của Word với **ô trống điền được**, Tab để nhảy giữa các ô, lồng được vào nhau:
