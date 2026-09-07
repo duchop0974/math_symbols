@@ -361,10 +361,6 @@
     };
     document.getElementById('loading').classList.add('hidden');
     document.getElementById('app').classList.remove('hidden');
-    // Ô tìm và mục yêu thích cũ trong HTML đã được thay bằng bảng ký hiệu ở tab
-    // Chèn và thanh nút nhanh, nên ẩn hẳn.
-    document.querySelector('.search-bar').classList.add('hidden');
-    document.getElementById('favorites-section').classList.add('hidden');
     buildQuickBar();
     render();
   }

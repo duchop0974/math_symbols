@@ -38,23 +38,6 @@ body {
   color: var(--muted);
 }
 
-.search-bar { margin-bottom: 8px; }
-
-#search {
-  width: 100%;
-  padding: 6px 8px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  background: var(--bg);
-  color: var(--fg);
-  font-size: 13px;
-}
-
-#search:focus {
-  outline: none;
-  border-color: var(--accent);
-}
-
 .tabs { margin-bottom: 10px; }
 
 .tab-row {
