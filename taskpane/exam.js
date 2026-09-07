@@ -443,6 +443,8 @@ function variationTable(cfg) {
 
 const examHeader = (f, style) => wrapBody(examHeaderBody(f, style));
 const examFooter = () => wrapBody(examFooterBody());
+const questionBlock = (kind, start, count, cols) => wrapBody(questionBody(kind, start, count, cols));
+const essayBlock = (start, count, opts) => wrapBody(essayBody(start, count, opts));
 // Một phần của đề: dạng câu, số câu, tiêu đề (rỗng = không chèn tiêu đề).
 // part = { kind, count, cols, diem, subs, title }
 function partBody(part, index, from, brief, withTitle) {

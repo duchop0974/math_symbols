@@ -265,6 +265,346 @@ function readHeaderForm() {
 
 function renderExamPanel(panel) {
   const saved = loadHeader();
+  let style = loadStyle();
+  let parts = loadParts(style);
+
+  const check = (id, checked) => {
+    const box = h('input', { id, type: 'checkbox' });
+    box.checked = checked;
+    return box;
+  };
+
+  // ---------------------------------------------------------- kiểu đề & đầu đề
+
+  const styleSel = select(
+    [
+      ['tl', 'Tự luận / học sinh giỏi'],
+      ['tn', 'Trắc nghiệm (có mã đề)'],
+    ],
+    style,
+    (e) => {
+      style = e.target.value;
+      saveStyle(style);
+      parts = loadParts(style);
+      // Đề Bộ đánh số lại từ 1 mỗi phần; đề tự luận thường đánh liên tục cả đề.
+      const cont = document.getElementById('skel-continuous');
+      if (cont) cont.checked = style === 'tl';
+      const titles = document.getElementById('skel-titles');
+      if (titles) titles.checked = style === 'tn';
+      renderParts();
+      applyStyle();
+    }
+  );
+
+  const rows = {};
+  const headerRows = HEADER_FIELDS.map(([key, label, placeholder, only]) => {
+    const row = fieldRow(label, input(`hdr-${key}`, saved[key], { placeholder }));
+    rows[key] = { row, only };
+    return row;
+  });
+
+  // Ẩn ô không thuộc kiểu đề đang chọn, và bật/tắt các khối chỉ hợp với một kiểu.
+  function applyStyle() {
+    Object.values(rows).forEach(({ row, only }) => {
+      row.classList.toggle('hidden', !!only && only !== style);
+    });
+    panel.querySelectorAll('[data-only]').forEach((el) => {
+      el.classList.toggle('hidden', el.dataset.only !== style);
+    });
+    skelSummary();
+  }
+
+  // -------------------------------------------------------- các phần của đề
+
+  const partsBox = h('div', { id: 'skel-parts', class: 'parts' });
+  const briefOn = () => !!(document.getElementById('skel-brief') || {}).checked;
+  const titlesOn = () => (document.getElementById('skel-titles') || {}).checked !== false;
+
+  function partExtras(part) {
+    if (part.kind === 'tl') {
+      const diem = input('', part.diem || '2,0', { placeholder: '2,0' });
+      diem.className = 'tiny';
+      diem.addEventListener('input', () => {
+        part.diem = diem.value;
+        touchParts();
+      });
+      const subs = input('', String(part.subs || 0), { type: 'number', min: 0, max: 5 });
+      subs.className = 'tiny';
+      subs.addEventListener('input', () => {
+        part.subs = parseInt(subs.value, 10) || 0;
+        touchParts();
+      });
+      return [
+        h('span', { class: 'tiny-label', text: 'điểm' }),
+        diem,
+        h('span', { class: 'tiny-label', text: 'ý' }),
+        subs,
+      ];
+    }
+    if (part.kind !== 'mc') return [];
+    const cols = select(
+      [
+        ['2', '2 cột'],
+        ['1', '1 cột'],
+        ['4', '4 cột'],
+      ],
+      String(part.cols || 2),
+      (e) => {
+        part.cols = parseInt(e.target.value, 10);
+        touchParts();
+      }
+    );
+    cols.className = 'tiny';
+    return [cols];
+  }
+
+  function renderParts() {
+    partsBox.innerHTML = '';
+    parts.forEach((part, i) => {
+      const kindSel = select(KIND_OPTIONS, part.kind, (e) => {
+        part.kind = e.target.value;
+        renderParts();
+        touchParts();
+      });
+      const count = input('', String(part.count), { type: 'number', min: 0, max: 99 });
+      count.className = 'tiny';
+      count.addEventListener('input', () => {
+        part.count = parseInt(count.value, 10) || 0;
+        touchParts();
+      });
+
+      const row = h('div', { class: 'part-row' }, [
+        h('span', { class: 'part-no', text: ROMAN[i] || String(i + 1) }),
+        kindSel,
+        count,
+        h('span', { class: 'tiny-label', text: 'câu' }),
+      ]
+        .concat(partExtras(part))
+        .concat([
+          h('button', {
+            class: 'icon',
+            text: '⤓',
+            title: 'Chỉ chèn riêng phần này',
+            onclick: () =>
+              Pane.insertOoxml(
+                partBlock(part, i, 1, briefOn(), titlesOn()),
+                `Đã chèn phần ${ROMAN[i] || i + 1}`
+              ),
+          }),
+          h('button', {
+            class: 'icon',
+            text: '✕',
+            title: 'Bỏ phần này',
+            onclick: () => {
+              parts.splice(i, 1);
+              renderParts();
+              touchParts();
+            },
+          }),
+        ]));
+
+      const title = h('input', {
+        type: 'text',
+        class: 'part-title',
+        placeholder: 'Tiêu đề tự sinh theo chuẩn — gõ để thay bằng chữ của mình',
+      });
+      title.value = part.title || '';
+      title.addEventListener('input', () => {
+        part.title = title.value.trim();
+        touchParts();
+      });
+
+      partsBox.appendChild(h('div', { class: 'part-item' }, [row, title]));
+    });
+  }
+
+  function touchParts() {
+    saveParts(style, parts);
+    skelSummary();
+  }
+
+  function skelConfig() {
+    return {
+      header: (document.getElementById('skel-header') || {}).checked !== false,
+      footer: !!(document.getElementById('skel-footer') || {}).checked,
+      continuous: !!(document.getElementById('skel-continuous') || {}).checked,
+      brief: briefOn(),
+      titles: titlesOn(),
+      parts,
+    };
+  }
+
+  function skelSummary() {
+    const box = document.getElementById('skel-summary');
+    if (!box) return;
+    const cfg = skelConfig();
+    const bits = [];
+    if (cfg.header) bits.push('đầu đề');
+    parts.forEach((p, i) => {
+      if (!p.count) return;
+      bits.push(`Phần ${ROMAN[i] || i + 1} ${p.count} câu ${KIND_SHORT[p.kind] || p.kind}`);
+    });
+    if (cfg.footer) bits.push('dòng kết đề');
+    const total = parts.reduce((a, p) => a + (p.count || 0), 0);
+    box.textContent = bits.length
+      ? `Sẽ dựng: ${bits.join(' + ')} — tổng ${total} câu, đánh số ${
+          cfg.continuous ? 'liên tục cả đề' : 'lại từ 1 mỗi phần'
+        }.`
+      : 'Chưa chọn gì để dựng.';
+  }
+
+  // Mục chính, đứng đầu: mọi thứ để ra một đề hoàn chỉnh nằm gọn trong đây, theo
+  // đúng thứ tự giáo viên nghĩ — đề loại gì, của ai, gồm những phần nào.
+  const skelSection = section(
+    'Dựng cả khung đề',
+    [fieldRow('Kiểu đề', styleSel)].concat(headerRows).concat([
+      h('div', { class: 'sub-head', text: 'Các phần của đề' }),
+      partsBox,
+      h('div', { class: 'btn-row' }, [
+        button('+ Thêm phần', () => {
+          parts.push({ kind: 'mc', count: 10, cols: 2 });
+          renderParts();
+          touchParts();
+        }),
+        button('Khôi phục mặc định', () => {
+          parts = defaultParts(style);
+          renderParts();
+          touchParts();
+        }),
+      ]),
+      h('div', { class: 'sub-head', text: 'Tuỳ chọn' }),
+      fieldRow('Kèm đầu đề thi', check('skel-header', true)),
+      fieldRow('Kèm dòng kết đề', check('skel-footer', true)),
+      fieldRow('Đánh số liên tục cả đề', check('skel-continuous', style === 'tl')),
+      fieldRow('Có tiêu đề phần', check('skel-titles', style === 'tn')),
+      fieldRow('Tiêu đề phần ngắn gọn', check('skel-brief', false)),
+      h('p', { id: 'skel-summary', class: 'measure' }),
+      button(
+        'Dựng vào Word',
+        () => {
+          const cfg = skelConfig();
+          const total = parts.reduce((a, p) => a + (p.count || 0), 0);
+          if (!total && !cfg.header && !cfg.footer) {
+            Pane.toast('Chưa chọn phần nào để dựng.', true);
+            return;
+          }
+          Pane.insertOoxml(examSkeleton(readHeaderForm(), style, cfg), 'Đã dựng cả khung đề');
+        },
+        true
+      ),
+      note(
+        'Thêm bao nhiêu phần cũng được, mỗi phần tự chọn dạng câu và số câu. Ô tiêu đề để ' +
+          'trống thì dùng câu chữ tự sinh theo đề Bộ GD&ĐT từ 2025; gõ vào để thay bằng chữ ' +
+          'của mình. Nút ⤓ chèn riêng một phần.'
+      ),
+    ]),
+    true
+  );
+  skelSection.addEventListener('change', skelSummary);
+  panel.appendChild(skelSection);
+
+  // ------------------------------------------- các khối lẻ, chèn thêm khi cần
+
+  const startRow = fieldRow('Bắt đầu từ câu', input('q-start', '1', { type: 'number', min: 1 }));
+  const countRow = fieldRow('Số câu chèn', input('q-count', '5', { type: 'number', min: 1, max: 100 }));
+
+  const qCols = select(
+    [
+      ['2', '2 cột'],
+      ['1', '1 cột'],
+      ['4', '4 cột'],
+    ],
+    '2'
+  );
+  qCols.id = 'q-cols';
+  const colsRow = fieldRow('Xếp phương án', qCols);
+  colsRow.dataset.only = 'tn';
+  const diemRow = fieldRow('Điểm mỗi câu', input('q-diem', '2,0', { placeholder: '2,0' }));
+  diemRow.dataset.only = 'tl';
+  const subsRow = fieldRow('Số ý mỗi câu', input('q-subs', '0', { type: 'number', min: 0, max: 5 }));
+  subsRow.dataset.only = 'tl';
+
+  const advance = (start, count) => {
+    const startBox = document.getElementById('q-start');
+    if (startBox) startBox.value = String(start + count);
+  };
+  const range = () => ({
+    start: Math.max(1, num('q-start', 1)),
+    count: Math.min(100, Math.max(1, num('q-count', 1))),
+  });
+
+  const insertQuestions = (kind, label) => {
+    const { start, count } = range();
+    Pane.insertOoxml(
+      questionBlock(kind, start, count, num('q-cols', 2)),
+      `Đã chèn ${count} ${label}`
+    );
+    advance(start, count);
+  };
+
+  const insertEssay = () => {
+    const { start, count } = range();
+    const opts = { diem: val('q-diem').trim() || '2,0', subs: num('q-subs', 0) };
+    Pane.insertOoxml(essayBlock(start, count, opts), `Đã chèn ${count} câu tự luận`);
+    advance(start, count);
+  };
+
+  panel.appendChild(
+    section(
+      'Chèn từng khối',
+      [
+        h('div', { class: 'btn-row' }, [
+          button('Đầu đề thi', () =>
+            Pane.insertOoxml(examHeader(readHeaderForm(), style), 'Đã chèn đầu đề thi')
+          ),
+          button('Dòng kết đề (…Hết…)', () =>
+            Pane.insertOoxml(examFooter(), 'Đã chèn phần kết đề')
+          ),
+        ]),
+        h('div', { class: 'sub-head', text: 'Chèn thêm câu hỏi' }),
+        startRow,
+        countRow,
+        colsRow,
+        diemRow,
+        subsRow,
+        h('div', { class: 'btn-row', 'data-only': 'tn' }, [
+          button('Trắc nghiệm A–D', () => insertQuestions('mc', 'câu trắc nghiệm'), true),
+          button('Đúng / Sai', () => insertQuestions('tf', 'câu đúng/sai')),
+          button('Trả lời ngắn', () => insertQuestions('sa', 'câu trả lời ngắn')),
+        ]),
+        h('div', { class: 'btn-row', 'data-only': 'tl' }, [
+          button('Câu tự luận (có điểm)', insertEssay, true),
+        ]),
+        note(
+          'Câu chèn ra để trống phần nội dung — bấm vào sau "Câu n." để gõ đề. ' +
+            'Ô "Bắt đầu từ câu" tự tăng sau mỗi lần chèn và dùng chung với thanh nút nhanh.'
+        ),
+      ],
+      false
+    )
+  );
+
+  const hdc = section('Bảng hướng dẫn chấm', [
+    fieldRow('Số dòng trống', input('hdc-rows', '10', { type: 'number', min: 1, max: 60 })),
+    h('div', { class: 'btn-row' }, [
+      button('Câu | Ý | Nội dung | Điểm', () =>
+        Pane.insertOoxml(
+          gradingTable(Math.max(1, num('hdc-rows', 10)), true),
+          'Đã chèn bảng hướng dẫn chấm'
+        )
+      ),
+      button('Câu | Nội dung | Điểm', () =>
+        Pane.insertOoxml(
+          gradingTable(Math.max(1, num('hdc-rows', 10)), false),
+          'Đã chèn bảng cấu trúc đề'
+        )
+      ),
+    ]),
+  ]);
+  hdc.dataset.only = 'tl';
+  panel.appendChild(hdc);
+
+  // --------------------------------------- thiết lập đặt một lần, ít phải đụng
 
   const fontSel = select(
     FONT_CHOICES.map((f) => [f, f]),
@@ -307,310 +647,6 @@ function renderExamPanel(panel) {
     )
   );
 
-  let style = loadStyle();
-  const styleSel = select(
-    [
-      ['tl', 'Tự luận / học sinh giỏi'],
-      ['tn', 'Trắc nghiệm (có mã đề)'],
-    ],
-    style,
-    (e) => {
-      style = e.target.value;
-      saveStyle(style);
-      parts = loadParts(style);
-      // Đề Bộ đánh số lại từ 1 mỗi phần; đề tự luận thường đánh liên tục cả đề.
-      const cont = document.getElementById('skel-continuous');
-      if (cont) cont.checked = style === 'tl';
-      const titles = document.getElementById('skel-titles');
-      if (titles) titles.checked = style === 'tn';
-      renderParts();
-      applyStyle();
-    }
-  );
-  const rows = {};
-  const headerRows = HEADER_FIELDS.map(([key, label, placeholder, only]) => {
-    const row = fieldRow(label, input(`hdr-${key}`, saved[key], { placeholder }));
-    rows[key] = { row, only };
-    return row;
-  });
-
-  // Ẩn ô không thuộc kiểu đề đang chọn, và bật/tắt các khối chỉ hợp với một kiểu.
-  function applyStyle() {
-    Object.values(rows).forEach(({ row, only }) => {
-      row.classList.toggle('hidden', !!only && only !== style);
-    });
-    panel.querySelectorAll('[data-only]').forEach((el) => {
-      el.classList.toggle('hidden', el.dataset.only !== style);
-    });
-    skelSummary();
-  }
-
-  panel.appendChild(
-    section(
-      'Đầu đề thi',
-      [fieldRow('Kiểu đề', styleSel)]
-        .concat(headerRows)
-        .concat([
-          button('Chèn đầu đề thi', () =>
-            Pane.insertOoxml(examHeader(readHeaderForm(), style), 'Đã chèn đầu đề thi')
-          ),
-        ]),
-      true
-    )
-  );
-
-  // Danh sách phần tự thêm/bớt: mỗi phần tự chọn dạng câu, số câu và tiêu đề.
-  let parts = loadParts(style);
-
-  const check = (id, checked) => {
-    const box = h('input', { id, type: 'checkbox' });
-    box.checked = checked;
-    return box;
-  };
-
-  const partsBox = h('div', { id: 'skel-parts', class: 'parts' });
-
-  function partExtras(part, i) {
-    if (part.kind === 'tl') {
-      const diem = input('', part.diem || '2,0', { placeholder: '2,0' });
-      diem.className = 'tiny';
-      diem.addEventListener('input', () => {
-        part.diem = diem.value;
-        touchParts();
-      });
-      const subs = input('', String(part.subs || 0), { type: 'number', min: 0, max: 5 });
-      subs.className = 'tiny';
-      subs.addEventListener('input', () => {
-        part.subs = parseInt(subs.value, 10) || 0;
-        touchParts();
-      });
-      return [h('span', { class: 'tiny-label', text: 'điểm' }), diem,
-              h('span', { class: 'tiny-label', text: 'ý' }), subs];
-    }
-    if (part.kind !== 'mc') return [];
-    const cols = select([['2', '2 cột'], ['1', '1 cột'], ['4', '4 cột']], String(part.cols || 2), (e) => {
-      part.cols = parseInt(e.target.value, 10);
-      touchParts();
-    });
-    cols.className = 'tiny';
-    return [cols];
-  }
-
-  function renderParts() {
-    partsBox.innerHTML = '';
-    parts.forEach((part, i) => {
-      const kindSel = select(KIND_OPTIONS, part.kind, (e) => {
-        part.kind = e.target.value;
-        renderParts();
-        touchParts();
-      });
-      const count = input('', String(part.count), { type: 'number', min: 0, max: 99 });
-      count.className = 'tiny';
-      count.addEventListener('input', () => {
-        part.count = parseInt(count.value, 10) || 0;
-        touchParts();
-      });
-
-      const row = h('div', { class: 'part-row' }, [
-        h('span', { class: 'part-no', text: ROMAN[i] || String(i + 1) }),
-        kindSel,
-        count,
-        h('span', { class: 'tiny-label', text: 'câu' }),
-      ].concat(partExtras(part, i)).concat([
-        h('button', {
-          class: 'icon', text: '⤓', title: 'Chỉ chèn riêng phần này',
-          onclick: () =>
-            Pane.insertOoxml(
-              partBlock(part, i, 1, briefOn(), titlesOn()),
-              `Đã chèn phần ${ROMAN[i] || i + 1}`
-            ),
-        }),
-        h('button', {
-          class: 'icon', text: '✕', title: 'Bỏ phần này',
-          onclick: () => { parts.splice(i, 1); renderParts(); touchParts(); },
-        }),
-      ]));
-
-      // Tiêu đề để trống nghĩa là không chèn dòng tiêu đề phần; bỏ trắng ô thì
-      // quay lại câu chữ tự sinh theo chuẩn.
-      const title = h('input', {
-        type: 'text', class: 'part-title',
-        placeholder: 'Tiêu đề tự sinh theo chuẩn — gõ để thay bằng chữ của mình',
-      });
-      title.value = part.title || '';
-      title.addEventListener('input', () => {
-        part.title = title.value.trim();
-        touchParts();
-      });
-
-      partsBox.appendChild(h('div', { class: 'part-item' }, [row, title]));
-    });
-  }
-
-  const briefOn = () => !!(document.getElementById('skel-brief') || {}).checked;
-  const titlesOn = () => (document.getElementById('skel-titles') || {}).checked !== false;
-
-  function touchParts() {
-    saveParts(style, parts);
-    skelSummary();
-  }
-
-  function skelConfig() {
-    return {
-      header: (document.getElementById('skel-header') || {}).checked !== false,
-      footer: !!(document.getElementById('skel-footer') || {}).checked,
-      continuous: !!(document.getElementById('skel-continuous') || {}).checked,
-      brief: briefOn(),
-      titles: titlesOn(),
-      parts,
-    };
-  }
-
-  function skelSummary() {
-    const box = document.getElementById('skel-summary');
-    if (!box) return;
-    const cfg = skelConfig();
-    const bits = [];
-    if (cfg.header) bits.push('đầu đề');
-    parts.forEach((p, i) => {
-      if (!p.count) return;
-      bits.push(`Phần ${ROMAN[i] || i + 1} ${p.count} câu ${KIND_SHORT[p.kind] || p.kind}`);
-    });
-    if (cfg.footer) bits.push('dòng kết đề');
-    const total = parts.reduce((a, p) => a + (p.count || 0), 0);
-    box.textContent = bits.length
-      ? `Sẽ dựng: ${bits.join(' + ')} — tổng ${total} câu, đánh số ${
-          cfg.continuous ? 'liên tục cả đề' : 'lại từ 1 mỗi phần'
-        }.`
-      : 'Chưa chọn gì để dựng.';
-  }
-
-  const skelSection = section(
-    'Dựng cả khung đề',
-    [
-      fieldRow('Kèm đầu đề thi', check('skel-header', true)),
-      fieldRow('Kèm dòng kết đề', check('skel-footer', true)),
-      fieldRow('Đánh số liên tục cả đề', check('skel-continuous', style === 'tl')),
-      fieldRow('Có tiêu đề phần', check('skel-titles', style === 'tn')),
-      fieldRow('Tiêu đề phần ngắn gọn', check('skel-brief', false)),
-      h('div', { class: 'sub-head', text: 'Các phần của đề' }),
-      partsBox,
-      h('div', { class: 'btn-row' }, [
-        button('+ Thêm phần', () => {
-          parts.push({ kind: 'mc', count: 10, cols: 2 });
-          renderParts();
-          touchParts();
-        }),
-        button('Khôi phục mặc định', () => {
-          parts = defaultParts(style);
-          renderParts();
-          touchParts();
-        }),
-      ]),
-      h('p', { id: 'skel-summary', class: 'measure' }),
-      button(
-        'Dựng vào Word',
-        () => {
-          const cfg = skelConfig();
-          const total = parts.reduce((a, p) => a + (p.count || 0), 0);
-          if (!total && !cfg.header && !cfg.footer) {
-            Pane.toast('Chưa chọn phần nào để dựng.', true);
-            return;
-          }
-          Pane.insertOoxml(examSkeleton(readHeaderForm(), style, cfg), 'Đã dựng cả khung đề');
-        },
-        true
-      ),
-      note(
-        'Thêm bao nhiêu phần cũng được, mỗi phần tự chọn dạng câu và số câu. Ô tiêu đề để ' +
-          'trống thì dùng câu chữ tự sinh theo đề Bộ GD&ĐT từ 2025; gõ vào để thay bằng chữ ' +
-          'của mình. Nút ⤓ chèn riêng một phần.'
-      ),
-    ],
-    true
-  );
-  skelSection.addEventListener('change', skelSummary);
-  panel.appendChild(skelSection);
-  renderParts();
-
-  const startRow = fieldRow('Bắt đầu từ câu', input('q-start', '1', { type: 'number', min: 1 }));
-  const countRow = fieldRow('Số câu chèn', input('q-count', '5', { type: 'number', min: 1, max: 100 }));
-
-  const qCols = select([['2', '2 cột'], ['1', '1 cột'], ['4', '4 cột']], '2');
-  qCols.id = 'q-cols';
-  const colsRow = fieldRow('Xếp phương án', qCols);
-  colsRow.dataset.only = 'tn';
-  const diemRow = fieldRow('Điểm mỗi câu', input('q-diem', '2,0', { placeholder: '2,0' }));
-  diemRow.dataset.only = 'tl';
-  const subsRow = fieldRow('Số ý mỗi câu', input('q-subs', '0', { type: 'number', min: 0, max: 5 }));
-  subsRow.dataset.only = 'tl';
-  const advance = (start, count) => {
-    const startBox = document.getElementById('q-start');
-    if (startBox) startBox.value = String(start + count);
-  };
-  const range = () => ({
-    start: Math.max(1, num('q-start', 1)),
-    count: Math.min(100, Math.max(1, num('q-count', 1))),
-  });
-
-  const insertQuestions = (kind, label) => {
-    const { start, count } = range();
-    Pane.insertOoxml(questionBlock(kind, start, count, num('q-cols', 2)), `Đã chèn ${count} ${label}`);
-    advance(start, count);
-  };
-
-  const insertEssay = () => {
-    const { start, count } = range();
-    const opts = { diem: val('q-diem').trim() || '2,0', subs: num('q-subs', 0) };
-    Pane.insertOoxml(essayBlock(start, count, opts), `Đã chèn ${count} câu tự luận`);
-    advance(start, count);
-  };
-
-  const essayButtons = h('div', { 'data-only': 'tl' }, [
-    h('div', { class: 'btn-row' }, [
-      button('Câu tự luận (có điểm)', insertEssay, true),
-      button('Dòng kết đề (…Hết…)', () => Pane.insertOoxml(examFooter(), 'Đã chèn phần kết đề')),
-    ]),
-    note(
-      'Chèn ra "Câu n (2,0 điểm)." rồi các ý a), b), c) mỗi ý một dòng — bấm vào sau dấu ' +
-        'chấm để gõ nội dung. Ô "Bắt đầu từ câu" tự tăng sau mỗi lần chèn.'
-    ),
-  ]);
-
-  const mcButtons = h('div', { 'data-only': 'tn' }, [
-    h('div', { class: 'btn-row' }, [
-      button('Trắc nghiệm A–D', () => insertQuestions('mc', 'câu trắc nghiệm'), true),
-      button('Đúng / Sai', () => insertQuestions('tf', 'câu đúng/sai')),
-      button('Trả lời ngắn', () => insertQuestions('sa', 'câu trả lời ngắn')),
-    ]),
-    note(
-      'Câu hỏi chèn ra để trống phần nội dung — bấm vào sau "Câu n:" để gõ đề, ' +
-        'sau mỗi nhãn A. B. C. D. để gõ phương án. Ô "Bắt đầu từ câu" tự tăng sau mỗi lần chèn.'
-    ),
-  ]);
-
-  panel.appendChild(
-    section(
-      'Chèn câu hỏi',
-      [startRow, countRow, colsRow, diemRow, subsRow, essayButtons, mcButtons],
-      true
-    )
-  );
-
-  const hdc = section('Bảng hướng dẫn chấm', [
-    fieldRow('Số dòng trống', input('hdc-rows', '10', { type: 'number', min: 1, max: 60 })),
-    h('div', { class: 'btn-row' }, [
-      button('Câu | Ý | Nội dung | Điểm', () =>
-        Pane.insertOoxml(gradingTable(Math.max(1, num('hdc-rows', 10)), true), 'Đã chèn bảng hướng dẫn chấm')
-      ),
-      button('Câu | Nội dung | Điểm', () =>
-        Pane.insertOoxml(gradingTable(Math.max(1, num('hdc-rows', 10)), false), 'Đã chèn bảng cấu trúc đề')
-      ),
-    ]),
-  ]);
-  hdc.dataset.only = 'tl';
-  panel.appendChild(hdc);
-
   panel.appendChild(
     section('Nếu đề phải nộp bằng MathType', [
       steps([
@@ -627,6 +663,7 @@ function renderExamPanel(panel) {
     ])
   );
 
+  renderParts();
   savePageSetting();
   applyStyle();
 }

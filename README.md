@@ -11,7 +11,15 @@ Trên cùng là **thanh nút nhanh** dính theo màn hình, luôn thấy dù đa
 - ô số câu + kiểu câu + nút **+ Chèn** — chèn câu tiếp theo rồi tự tăng số, đồng bộ với ô "Bắt đầu từ câu" của tab Đề thi;
 - hàng ký hiệu **vừa dùng và đánh dấu ★** — chèn lại công thức mà không phải rời tab đang làm.
 
-Mục **Dựng cả khung đề** là một danh sách phần tự thêm/bớt — không cố định ba phần:
+Tab **Đề thi** xếp theo việc chính trước, việc lẻ sau:
+
+1. **Dựng cả khung đề** (mở sẵn) — mọi thứ để ra một đề hoàn chỉnh trong một lần bấm.
+2. **Chèn từng khối** — đầu đề, dòng kết, thêm câu lẻ khi đề đã dựng xong.
+3. **Bảng hướng dẫn chấm**.
+4. **Định dạng chuẩn** — phông, cỡ chữ, lề trang, giãn dòng; đặt một lần rồi thôi.
+5. **Nếu đề phải nộp bằng MathType**.
+
+Mục **Dựng cả khung đề** chứa cả kiểu đề, thông tin đầu đề và một danh sách phần tự thêm/bớt — không cố định ba phần:
 
 | | |
 |---|---|
