@@ -5,7 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ký Hiệu Toán Học</title>
   <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
-  <link rel="stylesheet" href="taskpane.css" />
+  <!-- ?v= đổi mỗi lần sửa: GitHub Pages cache 10 phút, không có tham số này thì
+       Word giữ bản JS/CSS cũ kể cả khi taskpane.html đã mới. -->
+  <link rel="stylesheet" href="taskpane.css?v=3" />
 </head>
 <body>
   <div id="app" class="hidden">
@@ -23,11 +25,12 @@
     <div id="panel" class="category"></div>
 
     <div id="toast" class="toast hidden"></div>
+    <div class="ver">phiên bản 3</div>
   </div>
 
   <div id="loading">Đang tải Office.js...</div>
 
-  <script src="symbols.js"></script>
-  <script src="taskpane.js"></script>
+  <script src="symbols.js?v=3"></script>
+  <script src="taskpane.js?v=3"></script>
 </body>
 </html>
