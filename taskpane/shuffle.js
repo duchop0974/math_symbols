@@ -14,8 +14,31 @@ const xmlSerializer = new XMLSerializer();
 
 function parseXml(text) {
   const doc = xmlParser.parseFromString(text, 'application/xml');
-  if (doc.querySelector('parsererror')) throw new Error('OOXML đọc được từ Word không hợp lệ.');
+  const err = doc.querySelector('parsererror');
+  if (err) throw new Error('OOXML đọc được từ Word không hợp lệ: ' + err.textContent.slice(0, 120));
   return doc;
+}
+
+// Word gắn w14:paraId, w14:textId, mc:Ignorable… lên từng đoạn, nên bọc mảnh
+// body bằng một thẻ chỉ khai báo w và m là XML hỏng ngay. Lấy nguyên bộ khai báo
+// namespace từ thẻ <w:document> của chính gói Word trả về.
+const NS = { decl: `${W_NS} ${MATH_NS}` };
+
+function captureNs(pkgXml) {
+  const tag = /<w:document([^>]*)>/.exec(pkgXml);
+  const decls = tag ? tag[1].match(/xmlns:[\w-]+="[^"]*"/g) : null;
+  NS.decl = decls && decls.length ? decls.join(' ') : `${W_NS} ${MATH_NS}`;
+  return NS.decl;
+}
+
+// Bọc mảnh body thành XML hợp lệ để sửa bằng DOM, rồi trả lại đúng mảnh đó.
+function editFragment(bodyXml, change) {
+  const doc = parseXml(`<root ${NS.decl}>${bodyXml}</root>`);
+  const out = change(doc);
+  if (out === false) return bodyXml;
+  return [...doc.documentElement.childNodes]
+    .map((n) => xmlSerializer.serializeToString(n))
+    .join('');
 }
 
 // ---------------------------------------------------------- ghép gói Flat OPC
@@ -86,22 +109,21 @@ function randomPerm(n) {
 // perm[viTriMoi] = viTriCu. Trả về ruột body mới và perm đã dùng (null nếu câu
 // này không có đủ 4 phương án — câu đúng/sai, trả lời ngắn, tự luận).
 function shuffleOptions(bodyXml, perm) {
-  const doc = parseXml(`<root ${W_NS} ${MATH_NS}>${bodyXml}</root>`);
-  const units = optionUnits(doc);
-  if (units.length !== 4) return { body: bodyXml, perm: null };
-
-  const used = perm || randomPerm(4);
-  const clones = units.map((u) => u.cloneNode(true));
-  units.forEach((unit, newIdx) => {
-    const src = clones[used[newIdx]];
-    while (unit.firstChild) unit.removeChild(unit.firstChild);
-    [...src.childNodes].forEach((n) => unit.appendChild(n.cloneNode(true)));
-    setLabel(unit, LETTERS[newIdx]);
+  let used = null;
+  const body = editFragment(bodyXml, (doc) => {
+    const units = optionUnits(doc);
+    if (units.length !== 4) return false;
+    used = perm || randomPerm(4);
+    const clones = units.map((u) => u.cloneNode(true));
+    units.forEach((unit, newIdx) => {
+      const src = clones[used[newIdx]];
+      while (unit.firstChild) unit.removeChild(unit.firstChild);
+      [...src.childNodes].forEach((n) => unit.appendChild(n.cloneNode(true)));
+      setLabel(unit, LETTERS[newIdx]);
+    });
+    return true;
   });
-
-  const root = doc.documentElement;
-  const out = [...root.childNodes].map((n) => xmlSerializer.serializeToString(n)).join('');
-  return { body: out, perm: used };
+  return { body, perm: used };
 }
 
 // ------------------------------------------------------------------- đáp án
@@ -125,13 +147,12 @@ function remapKey(entries, order, perms) {
 // Đổi chữ ở <w:t> đầu tiên khớp `re`. Dùng để đánh lại số câu và thay mã đề mà
 // không đụng tới phần còn lại (công thức, định dạng) của khối.
 function replaceFirstText(bodyXml, re, make) {
-  const doc = parseXml(`<root ${W_NS} ${MATH_NS}>${bodyXml}</root>`);
-  const target = [...doc.getElementsByTagName('w:t')].find((t) => re.test(t.textContent));
-  if (!target) return bodyXml;
-  target.textContent = make(target.textContent);
-  return [...doc.documentElement.childNodes]
-    .map((n) => xmlSerializer.serializeToString(n))
-    .join('');
+  return editFragment(bodyXml, (doc) => {
+    const target = [...doc.getElementsByTagName('w:t')].find((t) => re.test(t.textContent));
+    if (!target) return false;
+    target.textContent = make(target.textContent);
+    return true;
+  });
 }
 
 const renumberBlock = (bodyXml, no) =>
@@ -210,6 +231,7 @@ async function makeVariants(cfg) {
   return Word.run(async (ctx) => {
     const raw = await readSource(ctx);
     const carrier = (raw.header || raw.parts[0].heading || raw.parts[0].questions[0]).value;
+    captureNs(carrier);
     const source = {
       headerBody: raw.header ? bodyOf(raw.header.value) : '',
       parts: raw.parts.map((p) => ({
