@@ -38,7 +38,7 @@ Nút **Dựng cả khung đề** chèn một lần ra đầu đề + ba tiêu đ
 manifest.xml          # Manifest add-in
 set-host.ps1          # Script điền URL GitHub Pages vào manifest
 installer/
-  MathSymbols.iss     # Script Inno Setup tạo MathSymbolsSetup.exe
+  TroLySoanDe.iss     # Script Inno Setup tạo TroLySoanDeSetup.exe
   build.ps1           # Biên dịch bộ cài
   Register-Addin.ps1  # Đăng ký/gỡ add-in bằng PowerShell (triển khai hàng loạt)
 assets/               # Icon add-in (16/32/64/80/128 px)
@@ -79,10 +79,10 @@ powershell -File set-host.ps1 -User duchop0974 -Repo math_symbols
 
 Tải bộ cài mới nhất tại [Releases](https://github.com/duchop0974/math_symbols/releases/latest).
 
-Người dùng cuối chỉ cần chạy `MathSymbolsSetup.exe`:
+Người dùng cuối chỉ cần chạy `TroLySoanDeSetup.exe`:
 
 1. Đóng Microsoft Word.
-2. Chạy `MathSymbolsSetup.exe` (cài theo từng user, **không cần quyền admin**).
+2. Chạy `TroLySoanDeSetup.exe` (cài theo từng user, **không cần quyền admin**).
 3. Mở Word → tab **Home** → nút **Add-ins** → mục **Developer Add-ins** → bấm **Trợ Lý Soạn Đề**.
 4. Từ lần này trở đi, nút **Soạn đề** nằm sẵn ở tab Home.
 
@@ -120,10 +120,10 @@ Add-in tải giao diện từ GitHub Pages nên **máy cần có Internet** khi 
 
 ### Cách bộ cài hoạt động
 
-- Copy `manifest.xml` vào `%LOCALAPPDATA%\MathSymbolsAddin\`.
+- Copy `manifest.xml` vào `%LOCALAPPDATA%\TroLySoanDe\`.
 - Ghi một giá trị `REG_SZ` vào `HKCU\SOFTWARE\Microsoft\Office\16.0\WEF\Developer`: tên = `<Id>` trong manifest, dữ liệu = đường dẫn manifest. Đây chính là cơ chế mà công cụ sideload chính thức của Microsoft (`office-addin-dev-settings`) dùng.
 
-Muốn triển khai hàng loạt không qua giao diện, dùng `installer\Register-Addin.ps1` (có tham số `-Uninstall`) hoặc chạy `MathSymbolsSetup.exe /SILENT`.
+Muốn triển khai hàng loạt không qua giao diện, dùng `installer\Register-Addin.ps1` (có tham số `-Uninstall`) hoặc chạy `TroLySoanDeSetup.exe /SILENT`.
 
 ### Build lại bộ cài
 
@@ -136,10 +136,10 @@ powershell -ExecutionPolicy Bypass -File installer\build.ps1
 Cần `-ExecutionPolicy Bypass` vì Windows mặc định chặn chạy file `.ps1`; cờ này chỉ áp cho đúng tiến trình đó, không đổi thiết lập máy. Thiếu nó sẽ báo *"running scripts is disabled on this system"* trước khi script kịp chạy. Cách khác là gọi thẳng trình biên dịch:
 
 ```powershell
-& "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe" installer\MathSymbols.iss
+& "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe" installer\TroLySoanDe.iss
 ```
 
-Kết quả: `dist\MathSymbolsSetup.exe`. Lưu ý tương tự khi chạy `set-host.ps1` và `Register-Addin.ps1`.
+Kết quả: `dist\TroLySoanDeSetup.exe`. Lưu ý tương tự khi chạy `set-host.ps1` và `Register-Addin.ps1`.
 
 ### Lựa chọn thay thế
 

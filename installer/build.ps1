@@ -1,4 +1,4 @@
-# Biên dịch bộ cài: installer\MathSymbols.iss -> dist\MathSymbolsSetup.exe
+# Biên dịch bộ cài: installer\TroLySoanDe.iss -> dist\TroLySoanDeSetup.exe
 [CmdletBinding()]
 param()
 
@@ -15,8 +15,8 @@ if (-not $iscc) {
     throw "Không tìm thấy ISCC.exe. Cài Inno Setup bằng: winget install --id JRSoftware.InnoSetup"
 }
 
-& $iscc (Join-Path $PSScriptRoot "MathSymbols.iss")
+& $iscc (Join-Path $PSScriptRoot "TroLySoanDe.iss")
 if ($LASTEXITCODE -ne 0) { throw "Biên dịch thất bại (exit $LASTEXITCODE)" }
 
-$output = Join-Path (Split-Path $PSScriptRoot -Parent) "dist\MathSymbolsSetup.exe"
+$output = Join-Path (Split-Path $PSScriptRoot -Parent) "dist\TroLySoanDeSetup.exe"
 Write-Host "`nĐã tạo: $output"

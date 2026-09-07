@@ -41,7 +41,8 @@ if ($Uninstall) {
     $removed = 0
     foreach ($name in $props.PSObject.Properties.Name) {
         if ($name -like "PS*") { continue }
-        if ($props.$name -like "*math_symbols*" -or $props.$name -like "*MathSymbols*") {
+        if ($props.$name -like "*math_symbols*" -or $props.$name -like "*MathSymbols*" -or
+            $props.$name -like "*TroLySoanDe*") {
             Remove-ItemProperty -Path $DeveloperKey -Name $name
             Write-Host "Đã gỡ: $name"
             $removed++
