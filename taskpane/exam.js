@@ -202,33 +202,39 @@ function examFooter() {
 // Số câu mặc định theo đề Toán tốt nghiệp THPT: 12 – 4 – 6.
 const SECTION_COUNTS = { 1: 12, 2: 4, 3: 6 };
 
-function sectionText(which, count) {
+// Đề thật dùng hai biến thể: bản đầy đủ có nêu tên dạng câu hỏi, bản ngắn thì bỏ.
+const SECTION_KIND = {
+  1: 'Câu trắc nghiệm nhiều phương án lựa chọn.',
+  2: 'Câu trắc nghiệm đúng sai.',
+  3: 'Câu trắc nghiệm trả lời ngắn.',
+};
+
+const SECTION_TAIL = {
+  1: ' Mỗi câu hỏi thí sinh chỉ chọn một phương án.',
+  2: ' Trong mỗi ý a), b), c), d) ở mỗi câu, thí sinh chọn đúng hoặc sai.',
+  3: '',
+};
+
+const ROMAN = { 1: 'I', 2: 'II', 3: 'III' };
+
+function sectionText(which, count, brief) {
   const n = count || SECTION_COUNTS[which];
-  const range = `Thí sinh trả lời từ câu 1 đến câu ${n}.`;
-  if (which === 1) {
-    return (
-      'PHẦN I. Câu trắc nghiệm nhiều phương án lựa chọn. ' +
-      `${range} Mỗi câu hỏi thí sinh chỉ chọn một phương án.`
-    );
-  }
-  if (which === 2) {
-    return (
-      'PHẦN II. Câu trắc nghiệm đúng sai. ' +
-      `${range} Trong mỗi ý a), b), c), d) ở mỗi câu, thí sinh chọn đúng hoặc sai.`
-    );
-  }
-  return `PHẦN III. Câu trắc nghiệm trả lời ngắn. ${range}`;
+  const kind = brief ? '' : `${SECTION_KIND[which]} `;
+  return (
+    `PHẦN ${ROMAN[which]}. ${kind}Thí sinh trả lời từ câu 1 đến câu ${n}.` +
+    SECTION_TAIL[which]
+  );
 }
 
-function sectionHeading(which, count) {
-  return wrapBody(textPara(sectionText(which, count), { bold: true }));
+function sectionHeading(which, count, brief) {
+  return wrapBody(textPara(sectionText(which, count, brief), { bold: true }));
 }
 
 const MC_LABELS = ['A.', 'B.', 'C.', 'D.'];
 const TF_LABELS = ['a)', 'b)', 'c)', 'd)'];
 
 function multipleChoice(no, cols) {
-  const stem = textPara(`Câu ${no}: `, { bold: true, spaceAfter: 0 });
+  const stem = textPara(`Câu ${no}. `, { bold: true, spaceAfter: 0 });
   if (cols === 1) {
     const lines = MC_LABELS.map((l) => textPara(`${l} `, { ind: 284, spaceAfter: 0 }));
     return stem + lines.join('') + emptyPara();
@@ -244,14 +250,14 @@ function multipleChoice(no, cols) {
 
 function trueFalse(no) {
   return (
-    textPara(`Câu ${no}: `, { bold: true, spaceAfter: 0 }) +
+    textPara(`Câu ${no}. `, { bold: true, spaceAfter: 0 }) +
     TF_LABELS.map((l) => textPara(`${l} `, { ind: 284, spaceAfter: 0 })).join('') +
     emptyPara()
   );
 }
 
 function shortAnswer(no) {
-  return textPara(`Câu ${no}: `, { bold: true, spaceAfter: 0 }) + emptyPara();
+  return textPara(`Câu ${no}. `, { bold: true, spaceAfter: 0 }) + emptyPara();
 }
 
 const SUB_LABELS = ['a)', 'b)', 'c)', 'd)', 'e)'];

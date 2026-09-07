@@ -85,6 +85,36 @@ function FUNC(name) {
   );
 }
 
+// Biến số — chữ nghiêng, khác MTEXT (chữ đứng dùng cho tên hàm, dấu vi phân).
+function VAR(text) {
+  return `<m:r><m:t>${text}</m:t></m:r>`;
+}
+
+function SSUP(baseXml, supXml) {
+  return (
+    `<m:sSup><m:sSupPr>${CTRL}</m:sSupPr><m:e>${baseXml}</m:e><m:sup>${supXml}</m:sup></m:sSup>`
+  );
+}
+
+// Ô trống điền được của hàm số: f(▫) — dấu ngoặc bọc một <m:e/> rỗng nên Word
+// vẽ ra ô nhập, bấm vào gõ biến là xong.
+function OF(nameXml, argXml) {
+  return nameXml + DELIM('(', ')', `<m:e>${argXml || ''}</m:e>`);
+}
+
+// Như NARY nhưng điền sẵn phần dưới dấu tích phân; hide=true thì giấu cả hai cận.
+function NARY_OF(chr, hide, innerXml) {
+  const sub = hide ? '<m:subHide m:val="1"/>' : '';
+  const sup = hide ? '<m:supHide m:val="1"/>' : '';
+  return (
+    `<m:nary><m:naryPr><m:chr m:val="${chr}"/><m:limLoc m:val="subSup"/>${sub}${sup}${CTRL}` +
+    `</m:naryPr><m:sub/><m:sup/><m:e>${innerXml}</m:e></m:nary>`
+  );
+}
+
+// Vi phân dx: chữ d đứng, biến nghiêng — đây là chỗ hay bị gõ sai thành d nghiêng.
+const DIFF = (v) => MTEXT('d') + VAR(v);
+
 function ACC(chr) {
   return `<m:acc><m:accPr><m:chr m:val="${chr}"/>${CTRL}</m:accPr><m:e/></m:acc>`;
 }
@@ -278,6 +308,33 @@ const SYMBOL_CATEGORIES = [
       tpl('Gạch ngang dưới', '_▫', BAR('bot')),
       tpl('Ngoặc nhọn trên', '⏞▫', GROUPCHR('⏞', 'top', 'bot')),
       tpl('Ngoặc nhọn dưới', '⏟▫', GROUPCHR('⏟', 'bot', 'top')),
+    ],
+  },
+  {
+    name: 'Hàm số',
+    items: [
+      tpl('Hàm f(▫)', 'f(▫)', OF(VAR('f'))),
+      tpl('Hàm g(▫)', 'g(▫)', OF(VAR('g'))),
+      tpl('Hàm u(▫)', 'u(▫)', OF(VAR('u'))),
+      tpl('Đạo hàm f′(▫)', "f'(▫)", OF(VAR("f'"))),
+      tpl('Đạo hàm cấp hai f″(▫)', "f''(▫)", OF(VAR("f''"))),
+      tpl('y = f(▫)', 'y=f(▫)', VAR('y') + VAR('=') + OF(VAR('f'))),
+      tpl('Hàm hợp f(g(▫))', 'f(g(▫))', OF(VAR('f'), OF(VAR('g')))),
+      tpl('Hàm ngược f⁻¹(▫)', 'f⁻¹(▫)', OF(SSUP(VAR('f'), VAR('-1')))),
+      tpl('Nguyên hàm ∫f(x)dx', '∫f(x)dx', NARY_OF('∫', true, OF(VAR('f'), VAR('x')) + DIFF('x'))),
+      tpl(
+        'Tích phân có cận ∫f(x)dx',
+        '∫▫▫ f(x)dx',
+        NARY_OF('∫', false, OF(VAR('f'), VAR('x')) + DIFF('x'))
+      ),
+      tpl('Kết quả F(x) + C', 'F(x)+C', OF(VAR('F'), VAR('x')) + VAR('+') + VAR('C')),
+      tpl('Vi phân dx', 'dx', DIFF('x')),
+      tpl('Vi phân dt', 'dt', DIFF('t')),
+      tpl(
+        'Tập xác định D = ℝ∖{▫}',
+        'D=ℝ∖{▫}',
+        VAR('D') + VAR('=') + VAR('ℝ') + VAR('∖') + DELIM('{', '}', '<m:e/>')
+      ),
     ],
   },
 ];

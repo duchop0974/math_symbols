@@ -310,12 +310,26 @@ function renderExamPanel(panel) {
   // "Bắt đầu từ câu" về 1 luôn cho khỏi phải sửa tay.
   const insertPart = (which) => {
     const count = Math.max(1, num(`part-${which}`, SECTION_COUNTS[which]));
-    Pane.insertOoxml(sectionHeading(which, count), `Đã chèn tiêu đề Phần ${'I'.repeat(which)}`);
+    const brief = val('part-wording') === 'brief';
+    Pane.insertOoxml(
+      sectionHeading(which, count, brief),
+      `Đã chèn tiêu đề Phần ${'I'.repeat(which)}`
+    );
     const startBox = document.getElementById('q-start');
     if (startBox) startBox.value = '1';
   };
 
+  const wordingSel = select(
+    [
+      ['full', 'Đầy đủ (có nêu tên dạng câu)'],
+      ['brief', 'Ngắn gọn'],
+    ],
+    'full'
+  );
+  wordingSel.id = 'part-wording';
+
   const partSection = section('Tiêu đề phần', [
+    fieldRow('Câu chữ', wordingSel),
     fieldRow('Số câu Phần I', input('part-1', '12', { type: 'number', min: 1, max: 99 })),
     fieldRow('Số câu Phần II', input('part-2', '4', { type: 'number', min: 1, max: 99 })),
     fieldRow('Số câu Phần III', input('part-3', '6', { type: 'number', min: 1, max: 99 })),
