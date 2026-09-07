@@ -1,4 +1,4 @@
-# Ký Hiệu Toán Học — Word Add-in
+# Trợ Lý Soạn Đề — Word Add-in
 
 Task pane add-in cho Microsoft Word (Windows) giúp giáo viên **soạn đề thi nhanh hơn**: dựng sẵn khung đề, bảng biến thiên, bảng đáp án và các thao tác đánh số/trộn đề. Bảng ký hiệu Unicode và công thức Word Equation (OMML) là phần phụ đi kèm — không nhằm thay thế trình soạn công thức của Word.
 
@@ -30,7 +30,7 @@ Nút **Dựng cả khung đề** chèn một lần ra đầu đề + ba tiêu đ
   - *Đáp án*: chèn bảng đáp án từ chuỗi `1A 2B 3C` hoặc `ABCD...` (cả đáp án đúng/sai kiểu `1 ĐSSĐ`), bảng đáp án trống, đánh số lại toàn bộ câu hỏi, trộn thứ tự câu hỏi và chuyển bảng đáp án cũ sang thứ tự mới.
 - Nếu đơn vị bắt buộc nộp đề gõ bằng **MathType**: soạn cả đề bằng add-in rồi chuyển một lần ở bước cuối — Word → tab MathType → **Convert Equations** → nguồn *Word 2007 and later (OMML) equations*, phạm vi *Whole document*, đích *MathType equations (OLE objects)*. Hướng dẫn này có sẵn trong tab Đề thi.
 - Tìm kiếm theo tên tiếng Việt hoặc tiếng Anh (`alpha`, `integral`, `phân số`...).
-- Đánh dấu yêu thích (★) — lưu trong localStorage của task pane.
+- Đánh dấu yêu thích (★) và mẫu vừa dùng — hiện trên thanh nút nhanh, lưu trong localStorage của task pane.
 
 ## Cấu trúc
 
@@ -82,10 +82,17 @@ Người dùng cuối chỉ cần chạy `MathSymbolsSetup.exe`:
 
 1. Đóng Microsoft Word.
 2. Chạy `MathSymbolsSetup.exe` (cài theo từng user, **không cần quyền admin**).
-3. Mở Word → tab **Home** → nút **Add-ins** → mục **Developer Add-ins** → bấm **Ký Hiệu Toán Học**.
-4. Từ lần này trở đi, nút **Bảng Ký Hiệu** nằm sẵn ở tab Home.
+3. Mở Word → tab **Home** → nút **Add-ins** → mục **Developer Add-ins** → bấm **Trợ Lý Soạn Đề**.
+4. Từ lần này trở đi, nút **Soạn đề** nằm sẵn ở tab Home.
 
 Bước 3 chỉ phải làm một lần trên mỗi máy: Word nạp manifest ngay khi khởi động, nhưng chỉ gắn nút lên ribbon sau lần mở đầu tiên.
+
+## Cập nhật
+
+Giao diện task pane nạp trực tiếp từ GitHub Pages, nên **hầu hết thay đổi chỉ cần push code** — máy giáo viên có ngay, không phải cài lại. Hai ngoại lệ:
+
+- **Sửa `taskpane/taskpane.html`** (thêm file JS mới, đổi tiêu đề…): Word giữ bản HTML cũ trong cache. Đóng Word rồi xoá sạch bên trong `%LOCALAPPDATA%\Microsoft\Office\16.0\Wef`, mở lại Word. Các file `.js`/`.css` không bị, vì đã có tham số `?v=` tăng theo mỗi bản.
+- **Sửa `manifest.xml`** (tên add-in, nhãn nút ribbon…): phải phát hành bộ cài mới và chạy lại trên từng máy. `AppId` của bộ cài và `Id` của add-in giữ nguyên nên bản mới **nâng cấp đè** lên bản cũ, không tạo mục thứ hai trong Apps.
 
 ## Lưu ý khi trộn đề
 
@@ -95,9 +102,8 @@ Chức năng **Trộn thứ tự câu hỏi** đọc tài liệu qua Office.js, 
 - Để bảng đáp án ở file riêng, đừng để cuối đề, vì nó cũng nằm trong vùng bị trộn.
 - Sau khi trộn, task pane hiện bảng *câu mới ← câu gốc*; dán đáp án đề gốc vào ô "Chuyển đáp án theo thứ tự mới" để lấy đáp án tương ứng.
 
-Add-in nạp trực tiếp từ GitHub Pages nên khi cập nhật tính năng chỉ cần push code — người dùng **không phải cài lại** bộ cài.
 
-Gỡ cài đặt: **Settings → Apps → Ký Hiệu Toán Học → Uninstall** (bộ cài tự xoá khoá registry đã ghi).
+Gỡ cài đặt: **Settings → Apps → Trợ Lý Soạn Đề → Uninstall** (bộ cài tự xoá khoá registry đã ghi).
 
 Add-in tải giao diện từ GitHub Pages nên **máy cần có Internet** khi dùng.
 

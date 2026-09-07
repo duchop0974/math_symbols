@@ -7,11 +7,11 @@
   xsi:type="TaskPaneApp">
 
   <Id>0f864aba-8b36-40d2-8d98-c7cd44356d53</Id>
-  <Version>1.0.0.0</Version>
-  <ProviderName>Math Symbols</ProviderName>
+  <Version>1.1.0.0</Version>
+  <ProviderName>Trợ Lý Soạn Đề</ProviderName>
   <DefaultLocale>vi-VN</DefaultLocale>
-  <DisplayName DefaultValue="Ký Hiệu Toán Học" />
-  <Description DefaultValue="Chèn nhanh ký hiệu toán học và công thức Word Equation vào tài liệu." />
+  <DisplayName DefaultValue="Trợ Lý Soạn Đề" />
+  <Description DefaultValue="Dựng khung đề thi, bảng biến thiên, bảng đáp án và chèn công thức toán ngay trong Word." />
   <IconUrl DefaultValue="https://duchop0974.github.io/math_symbols/assets/icon-32.png" />
   <HighResolutionIconUrl DefaultValue="https://duchop0974.github.io/math_symbols/assets/icon-80.png" />
   <SupportUrl DefaultValue="https://github.com/duchop0974/math_symbols" />
@@ -83,13 +83,13 @@
         <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://github.com/duchop0974/math_symbols" />
       </bt:Urls>
       <bt:ShortStrings>
-        <bt:String id="Group.Label" DefaultValue="Ký Hiệu Toán" />
-        <bt:String id="TaskpaneButton.Label" DefaultValue="Bảng Ký Hiệu" />
-        <bt:String id="GetStarted.Title" DefaultValue="Ký Hiệu Toán Học đã sẵn sàng." />
+        <bt:String id="Group.Label" DefaultValue="Soạn Đề" />
+        <bt:String id="TaskpaneButton.Label" DefaultValue="Soạn đề" />
+        <bt:String id="GetStarted.Title" DefaultValue="Trợ Lý Soạn Đề đã sẵn sàng." />
       </bt:ShortStrings>
       <bt:LongStrings>
-        <bt:String id="TaskpaneButton.Tooltip" DefaultValue="Mở bảng chèn ký hiệu toán học và công thức." />
-        <bt:String id="GetStarted.Description" DefaultValue="Nhấn nút Bảng Ký Hiệu trên tab Home để mở bảng ký hiệu." />
+        <bt:String id="TaskpaneButton.Tooltip" DefaultValue="Mở bảng công cụ soạn đề thi và chèn công thức toán." />
+        <bt:String id="GetStarted.Description" DefaultValue="Nhấn nút Soạn đề trên tab Home để mở bảng công cụ." />
       </bt:LongStrings>
     </Resources>
   </VersionOverrides>

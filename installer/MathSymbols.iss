@@ -1,11 +1,11 @@
-; Bộ cài add-in "Ký Hiệu Toán Học" cho Microsoft Word.
+; Bộ cài add-in "Trợ Lý Soạn Đề" cho Microsoft Word.
 ; Cài theo từng user (không cần quyền admin): copy manifest vào LocalAppData
 ; và đăng ký vào khoá WEF\Developer để Word tự nạp add-in khi khởi động.
 
-#define AppName "Ky Hieu Toan Hoc"
-#define AppNameVi "Ký Hiệu Toán Học"
-#define AppVersion "1.0.0"
-#define AppPublisher "Math Symbols"
+#define AppName "Tro Ly Soan De"
+#define AppNameVi "Trợ Lý Soạn Đề"
+#define AppVersion "1.1.0"
+#define AppPublisher "Trợ Lý Soạn Đề"
 #define AppUrl "https://github.com/duchop0974/math_symbols"
 #define AddinId "0f864aba-8b36-40d2-8d98-c7cd44356d53"
 
@@ -77,4 +77,4 @@ begin
 end;
 
 [Messages]
-vi.FinishedLabel=Đã cài xong [name].%n%nMở Microsoft Word, vào tab Home và bấm nút "Bảng Ký Hiệu" để mở bảng ký hiệu toán học.%n%nAdd-in tải giao diện từ Internet nên máy cần có kết nối mạng khi sử dụng.
+vi.FinishedLabel=Đã cài xong [name].%n%nMở Microsoft Word, vào tab Home và bấm nút "Soạn đề" để mở bảng công cụ.%n%nAdd-in tải giao diện từ Internet nên máy cần có kết nối mạng khi sử dụng.

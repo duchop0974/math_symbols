@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Đăng ký / gỡ add-in "Ký Hiệu Toán Học" vào Word cho người dùng hiện tại.
+    Đăng ký / gỡ add-in "Trợ Lý Soạn Đề" vào Word cho người dùng hiện tại.
 
 .DESCRIPTION
     Word đọc danh sách add-in sideload từ khoá registry WEF\Developer:
@@ -47,7 +47,7 @@ if ($Uninstall) {
             $removed++
         }
     }
-    if ($removed -eq 0) { Write-Host "Không tìm thấy add-in Ký Hiệu Toán Học đã đăng ký." }
+    if ($removed -eq 0) { Write-Host "Không tìm thấy add-in Trợ Lý Soạn Đề đã đăng ký." }
     else { Write-Host "Gỡ xong. Khởi động lại Word để áp dụng." }
     return
 }
@@ -64,4 +64,4 @@ New-ItemProperty -Path $DeveloperKey -Name $id -Value $ManifestPath -PropertyTyp
 Write-Host "Đã đăng ký add-in:"
 Write-Host "  Id       : $id"
 Write-Host "  Manifest : $ManifestPath"
-Write-Host "Mở lại Word -> nút 'Bảng Ký Hiệu' sẽ xuất hiện ở tab Home."
+Write-Host "Mở lại Word -> nút 'Soạn đề' sẽ xuất hiện ở tab Home."
