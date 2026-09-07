@@ -1,8 +1,10 @@
 # Ký Hiệu Toán Học — Word Add-in
 
-Task pane add-in cho Microsoft Word (Windows) giúp chèn nhanh ký hiệu toán học Unicode và công thức Word Equation (OMML).
+Task pane add-in cho Microsoft Word (Windows) giúp giáo viên **soạn đề thi nhanh hơn**: dựng sẵn khung đề, bảng biến thiên, bảng đáp án và các thao tác đánh số/trộn đề. Bảng ký hiệu Unicode và công thức Word Equation (OMML) là phần phụ đi kèm — không nhằm thay thế trình soạn công thức của Word.
 
 ## Tính năng
+
+Task pane mở ra ở tab **Đề thi**; ba tab công cụ đứng trước, nhóm ký hiệu nằm dưới nhãn *Ký hiệu & công thức*.
 
 - 6 nhóm ký hiệu Unicode: Hy Lạp, Toán tử, Tập hợp, Logic, Mũi tên, Giải tích — click để chèn vào vị trí con trỏ.
 - 51 mẫu công thức OMML chia 4 nhóm — chèn thành Equation Object thật của Word với **ô trống điền được**, Tab để nhảy giữa các ô, lồng được vào nhau:
@@ -18,6 +20,7 @@ Task pane add-in cho Microsoft Word (Windows) giúp chèn nhanh ký hiệu toán
     Cả hai kiểu đều nhớ lại nội dung đã nhập cho lần mở sau, và ô "Bắt đầu từ câu" tự tăng sau mỗi lần chèn.
   - *Bảng BT*: dựng bảng biến thiên (3 dòng) hoặc bảng xét dấu (2 dòng) — nhập nghiệm, chọn dấu từng khoảng, xem trước ngay trong task pane rồi chèn ra thành bảng Word thật; mũi tên ↗ ↘ tự suy ra từ dấu đạo hàm.
   - *Đáp án*: chèn bảng đáp án từ chuỗi `1A 2B 3C` hoặc `ABCD...` (cả đáp án đúng/sai kiểu `1 ĐSSĐ`), bảng đáp án trống, đánh số lại toàn bộ câu hỏi, trộn thứ tự câu hỏi và chuyển bảng đáp án cũ sang thứ tự mới.
+- Nếu đơn vị bắt buộc nộp đề gõ bằng **MathType**: soạn cả đề bằng add-in rồi chuyển một lần ở bước cuối — Word → tab MathType → **Convert Equations** → nguồn *Word 2007 and later (OMML) equations*, phạm vi *Whole document*, đích *MathType equations (OLE objects)*. Hướng dẫn này có sẵn trong tab Đề thi.
 - Tìm kiếm theo tên tiếng Việt hoặc tiếng Anh (`alpha`, `integral`, `phân số`...).
 - Đánh dấu yêu thích (★) — lưu trong localStorage của task pane.
 

@@ -1,6 +1,6 @@
 (function () {
   const FAV_KEY = 'mathSymbols.favorites';
-  let activeCategory = SYMBOL_CATEGORIES[0].name;
+  let activeCategory = TOOL_TABS[0].name;
   let favorites = loadFavorites();
   let inWord = false;
 
@@ -111,22 +111,38 @@
 
   const toolTab = (name) => TOOL_TABS.find((t) => t.name === name);
 
+  function tabButton(name, kind) {
+    const tab = document.createElement('button');
+    tab.className = name === activeCategory ? `${kind} active` : kind;
+    tab.textContent = name;
+    tab.addEventListener('click', () => {
+      activeCategory = name;
+      document.getElementById('search').value = '';
+      render();
+    });
+    return tab;
+  }
+
+  // Công cụ soạn đề là phần chính, nên đứng trước; bảng ký hiệu/công thức là
+  // phần phụ, gom xuống dưới một nhãn nhỏ cho đỡ chiếm chỗ.
   function renderTabs() {
     const tabs = document.getElementById('tabs');
     tabs.innerHTML = '';
-    const names = SYMBOL_CATEGORIES.map((c) => c.name).concat(TOOL_TABS.map((t) => t.name));
-    names.forEach((name) => {
-      const tab = document.createElement('button');
-      const kind = toolTab(name) ? 'tab tool' : 'tab';
-      tab.className = name === activeCategory ? `${kind} active` : kind;
-      tab.textContent = name;
-      tab.addEventListener('click', () => {
-        activeCategory = name;
-        document.getElementById('search').value = '';
-        render();
-      });
-      tabs.appendChild(tab);
-    });
+
+    const tools = document.createElement('div');
+    tools.className = 'tab-row';
+    TOOL_TABS.forEach((t) => tools.appendChild(tabButton(t.name, 'tab tool')));
+    tabs.appendChild(tools);
+
+    const label = document.createElement('div');
+    label.className = 'tab-group-label';
+    label.textContent = 'Ký hiệu & công thức';
+    tabs.appendChild(label);
+
+    const symbols = document.createElement('div');
+    symbols.className = 'tab-row';
+    SYMBOL_CATEGORIES.forEach((c) => symbols.appendChild(tabButton(c.name, 'tab')));
+    tabs.appendChild(symbols);
   }
 
   function render() {

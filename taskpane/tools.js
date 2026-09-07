@@ -77,6 +77,14 @@ function note(label) {
   return h('p', { class: 'hint', text: label });
 }
 
+function steps(items) {
+  return h(
+    'ol',
+    { class: 'steps' },
+    items.map((s) => h('li', { text: s }))
+  );
+}
+
 const val = (id) => (document.getElementById(id) || {}).value || '';
 const num = (id, fallback) => {
   const n = parseInt(val(id), 10);
@@ -285,6 +293,23 @@ function renderExamPanel(panel) {
     ),
   ]);
   panel.appendChild(mcButtons);
+
+  panel.appendChild(heading('Nếu đề phải nộp bằng MathType'));
+  panel.appendChild(
+    steps([
+      'Soạn xong cả đề bằng add-in này (công thức là Equation của Word).',
+      'Word → tab MathType → Convert Equations.',
+      'Nguồn: Word 2007 and later (OMML) equations — Phạm vi: Whole document — ' +
+        'Đích: MathType equations (OLE objects).',
+    ])
+  );
+  panel.appendChild(
+    note(
+      'Chuyển ở bước cuối cùng và giữ lại một bản chưa chuyển: sau khi thành MathType, ' +
+        'muốn sửa công thức là phải mở MathType chứ không dùng lại add-in được. Bảng biến ' +
+        'thiên, bảng đáp án và khung câu hỏi không bị ảnh hưởng.'
+    )
+  );
 
   applyStyle();
 }
