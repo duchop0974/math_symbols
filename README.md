@@ -10,6 +10,10 @@ Task pane add-in cho Microsoft Word (Windows) giúp chèn nhanh ký hiệu toán
   - *Tổng & tích phân*: Σ, Π, ∫ (có cận/không cận/hai lớp/đường), ⋃, ⋂.
   - *Ngoặc & ma trận*: 6 loại ngoặc, tổ hợp, hệ 2–3 phương trình, ma trận 2x2/3x3, định thức, vector cột.
   - *Hàm & dấu*: lim, max, sin/cos/tan/ln, log cơ số, đạo hàm thường và riêng, vector, hat, chấm trên, gạch trên/dưới, ngoặc nhọn trên/dưới.
+- **Ba tab công cụ soạn đề thi**:
+  - *Đề thi*: chèn đầu đề (Sở/Trường, kỳ thi, môn, thời gian, mã đề — nhớ lại cho lần sau), tiêu đề Phần I/II/III theo cấu trúc đề THPT, và chèn hàng loạt câu trắc nghiệm A–D (1/2/4 cột), câu đúng/sai a–d, câu trả lời ngắn với số câu tự tăng.
+  - *Bảng BT*: dựng bảng biến thiên (3 dòng) hoặc bảng xét dấu (2 dòng) — nhập nghiệm, chọn dấu từng khoảng, xem trước ngay trong task pane rồi chèn ra thành bảng Word thật; mũi tên ↗ ↘ tự suy ra từ dấu đạo hàm.
+  - *Đáp án*: chèn bảng đáp án từ chuỗi `1A 2B 3C` hoặc `ABCD...` (cả đáp án đúng/sai kiểu `1 ĐSSĐ`), bảng đáp án trống, đánh số lại toàn bộ câu hỏi, trộn thứ tự câu hỏi và chuyển bảng đáp án cũ sang thứ tự mới.
 - Tìm kiếm theo tên tiếng Việt hoặc tiếng Anh (`alpha`, `integral`, `phân số`...).
 - Đánh dấu yêu thích (★) — lưu trong localStorage của task pane.
 
@@ -27,10 +31,20 @@ taskpane/
   taskpane.html       # Giao diện task pane
   taskpane.css        # Style (hỗ trợ dark mode)
   taskpane.js         # Logic render + chèn vào Word qua Office.js
-  symbols.js          # Dữ liệu ký hiệu + mẫu OMML
+  symbols.js          # Dữ liệu ký hiệu + mẫu OMML + hàm đóng gói Flat OPC
+  exam.js             # Dựng OOXML cho đầu đề, câu hỏi, bảng biến thiên, bảng đáp án
+  tools.js            # Form của 3 tab công cụ soạn đề thi
 ```
 
 Không có build step — toàn bộ là static file, host thẳng lên GitHub Pages.
+
+Chạy thử tại chỗ (không cần Word, các nút sẽ copy OOXML vào clipboard thay vì chèn):
+
+```bash
+python -m http.server 8144
+```
+
+rồi mở `http://localhost:8144/taskpane/taskpane.html`.
 
 ## Triển khai lên GitHub Pages
 
@@ -57,6 +71,16 @@ Người dùng cuối chỉ cần chạy `MathSymbolsSetup.exe`:
 4. Từ lần này trở đi, nút **Bảng Ký Hiệu** nằm sẵn ở tab Home.
 
 Bước 3 chỉ phải làm một lần trên mỗi máy: Word nạp manifest ngay khi khởi động, nhưng chỉ gắn nút lên ribbon sau lần mở đầu tiên.
+
+## Lưu ý khi trộn đề
+
+Chức năng **Trộn thứ tự câu hỏi** đọc tài liệu qua Office.js, nhận diện mọi đoạn bắt đầu bằng `Câu 1:` / `Câu 1.` / `Câu 1)`, rồi đảo thứ tự các khối đó **từ câu đầu tiên đến hết tài liệu** và đánh số lại từ 1.
+
+- Lưu tài liệu trước khi trộn — thao tác này ghi đè phần thân đề.
+- Để bảng đáp án ở file riêng, đừng để cuối đề, vì nó cũng nằm trong vùng bị trộn.
+- Sau khi trộn, task pane hiện bảng *câu mới ← câu gốc*; dán đáp án đề gốc vào ô "Chuyển đáp án theo thứ tự mới" để lấy đáp án tương ứng.
+
+Add-in nạp trực tiếp từ GitHub Pages nên khi cập nhật tính năng chỉ cần push code — người dùng **không phải cài lại** bộ cài.
 
 Gỡ cài đặt: **Settings → Apps → Ký Hiệu Toán Học → Uninstall** (bộ cài tự xoá khoá registry đã ghi).
 

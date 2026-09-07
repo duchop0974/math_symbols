@@ -34,13 +34,10 @@
 
   const allItems = () => SYMBOL_CATEGORIES.flatMap((c) => c.items);
 
-  function insert(item) {
-    const isOmml = item.type === 'omml';
-    const data = isOmml ? item.ooxml : item.symbol;
-
+  function send(data, isOmml, label) {
     if (!inWord) {
       navigator.clipboard?.writeText(data);
-      toast(`Chế độ xem thử: đã copy "${item.name}" vào clipboard`);
+      toast(`Chế độ xem thử: đã copy "${label}" vào clipboard`);
       return;
     }
 
@@ -51,9 +48,18 @@
         if (result.status === Office.AsyncResultStatus.Failed) {
           toast(`Lỗi chèn: ${result.error.message}`, true);
         } else {
-          toast(`Đã chèn ${item.symbol || item.name}`);
+          toast(label);
         }
       }
+    );
+  }
+
+  function insert(item) {
+    const isOmml = item.type === 'omml';
+    send(
+      isOmml ? item.ooxml : item.symbol,
+      isOmml,
+      inWord ? `Đã chèn ${item.symbol || item.name}` : item.name
     );
   }
 
@@ -103,15 +109,19 @@
     items.forEach((item) => container.appendChild(buildButton(item)));
   }
 
+  const toolTab = (name) => TOOL_TABS.find((t) => t.name === name);
+
   function renderTabs() {
     const tabs = document.getElementById('tabs');
     tabs.innerHTML = '';
-    SYMBOL_CATEGORIES.forEach((cat) => {
+    const names = SYMBOL_CATEGORIES.map((c) => c.name).concat(TOOL_TABS.map((t) => t.name));
+    names.forEach((name) => {
       const tab = document.createElement('button');
-      tab.className = cat.name === activeCategory ? 'tab active' : 'tab';
-      tab.textContent = cat.name;
+      const kind = toolTab(name) ? 'tab tool' : 'tab';
+      tab.className = name === activeCategory ? `${kind} active` : kind;
+      tab.textContent = name;
       tab.addEventListener('click', () => {
-        activeCategory = cat.name;
+        activeCategory = name;
         document.getElementById('search').value = '';
         render();
       });
@@ -128,6 +138,7 @@
 
     if (query) {
       favSection.classList.add('hidden');
+      panel.className = 'category';
       const matches = allItems().filter(
         (i) => i.name.toLowerCase().includes(query) || (i.symbol || '').includes(query)
       );
@@ -141,6 +152,16 @@
       }
       return;
     }
+
+    const tool = toolTab(activeCategory);
+    if (tool) {
+      favSection.classList.add('hidden');
+      panel.innerHTML = '';
+      panel.className = 'category tool-panel';
+      tool.render(panel);
+      return;
+    }
+    panel.className = 'category';
 
     const favItems = allItems().filter(isFav);
     if (favItems.length > 0) {
@@ -167,6 +188,12 @@
 
   function start(word) {
     inWord = word;
+    // Các tab công cụ ở tools.js chèn nội dung qua đây.
+    window.Pane = {
+      inWord: word,
+      toast,
+      insertOoxml: (xml, label) => send(xml, true, label),
+    };
     document.getElementById('loading').classList.add('hidden');
     document.getElementById('app').classList.remove('hidden');
     document.getElementById('search').addEventListener('input', render);

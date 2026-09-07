@@ -184,3 +184,159 @@ body {
 }
 
 .toast.error { background: #a4262c; }
+
+/* ---------------------------------------------- tab công cụ soạn đề thi */
+
+.tab.tool {
+  border-style: dashed;
+}
+
+.tool-panel .tool-head {
+  margin: 14px 0 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.tool-panel .tool-head:first-child { margin-top: 4px; }
+
+.sub-head {
+  margin: 10px 0 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.field {
+  display: grid;
+  grid-template-columns: 1fr 1.35fr;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 5px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.field input[type="text"],
+.field input[type="number"],
+.field select,
+.field textarea {
+  width: 100%;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: inherit;
+  font-size: 12px;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.field input[type="checkbox"] {
+  justify-self: start;
+  width: 15px;
+  height: 15px;
+  margin: 0;
+}
+
+.act {
+  width: 100%;
+  margin-top: 6px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.act:hover { background: var(--hover); }
+
+.act.primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+
+.act.primary:hover { opacity: 0.9; }
+
+.btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.btn-row .act { flex: 1 1 90px; width: auto; }
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.chip select {
+  padding: 1px 2px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 11px;
+}
+
+.preview { overflow-x: auto; }
+
+table.bbt {
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+table.bbt th,
+table.bbt td {
+  min-width: 26px;
+  padding: 3px 6px;
+  border: 1px solid var(--border);
+  text-align: center;
+}
+
+table.bbt th {
+  font-weight: 400;
+  font-style: italic;
+  color: var(--muted);
+}
+
+table.bbt tr.tall td { height: 34px; border-left: 0; border-right: 0; }
+table.bbt tr.tall td:first-of-type { border-left: 1px solid var(--border); }
+table.bbt tr.tall td:last-of-type { border-right: 1px solid var(--border); }
+
+.out {
+  margin: 4px 0 0;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--hover);
+  color: var(--fg);
+  font-size: 11px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}

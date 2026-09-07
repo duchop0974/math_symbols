@@ -19,7 +19,9 @@ const DOC_REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relations
 const DOC_TYPE =
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml';
 
-function wrapOMath(inner) {
+// Gói bất kỳ nội dung <w:body> nào thành một package Flat OPC hoàn chỉnh.
+// Dùng chung cho cả công thức (oMath) lẫn khung đề thi/bảng biểu ở exam.js.
+function wrapBody(bodyXml) {
   return (
     `<pkg:package xmlns:pkg="${PKG_NS}">` +
     '<pkg:part pkg:name="/_rels/.rels" ' +
@@ -29,10 +31,14 @@ function wrapOMath(inner) {
     '</Relationships></pkg:xmlData></pkg:part>' +
     `<pkg:part pkg:name="/word/document.xml" pkg:contentType="${DOC_TYPE}">` +
     `<pkg:xmlData><w:document ${W_NS} ${MATH_NS}><w:body>` +
-    `<w:p><m:oMath>${inner}</m:oMath></w:p>` +
+    bodyXml +
     '</w:body></w:document></pkg:xmlData></pkg:part>' +
     '</pkg:package>'
   );
+}
+
+function wrapOMath(inner) {
+  return wrapBody(`<w:p><m:oMath>${inner}</m:oMath></w:p>`);
 }
 
 function tpl(name, preview, inner) {
