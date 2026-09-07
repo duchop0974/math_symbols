@@ -4,7 +4,14 @@ Task pane add-in cho Microsoft Word (Windows) giúp giáo viên **soạn đề t
 
 ## Tính năng
 
-Task pane mở ra ở tab **Đề thi**; ba tab công cụ đứng trước, nhóm ký hiệu nằm dưới nhãn *Ký hiệu & công thức*.
+Task pane mở ra ở tab **Đề thi**. Bốn tab trên một hàng: *Đề thi · Bảng BT · Đáp án · Ký hiệu* (10 nhóm ký hiệu gom vào ô chọn nhóm trong tab Ký hiệu).
+
+Trên cùng là **thanh nút nhanh** dính theo màn hình, luôn thấy dù đang ở mục nào:
+
+- ô số câu + kiểu câu + nút **+ Chèn** — chèn câu tiếp theo rồi tự tăng số, đồng bộ với ô "Bắt đầu từ câu" của tab Đề thi;
+- hàng ký hiệu **vừa dùng và đánh dấu ★** — chèn lại công thức mà không phải rời tab đang làm.
+
+Nút **Dựng cả khung đề** chèn một lần ra đầu đề + ba tiêu đề phần + đủ số câu trống (mặc định 12 – 4 – 6 = 22 câu), hoặc với đề tự luận là đầu đề + n câu + dòng kết.
 
 - 6 nhóm ký hiệu Unicode: Hy Lạp, Toán tử, Tập hợp, Logic, Mũi tên, Giải tích — click để chèn vào vị trí con trỏ.
 - 65 mẫu công thức OMML chia 5 nhóm — chèn thành Equation Object thật của Word với **ô trống điền được**, Tab để nhảy giữa các ô, lồng được vào nhau:

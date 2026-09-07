@@ -125,7 +125,7 @@ function tbl(widths, rowsXml, bordered) {
 // style 'tn': đề trắc nghiệm, có mã đề và dòng họ tên ngay dưới đầu đề.
 // style 'tl': đề tự luận / học sinh giỏi — không có mã đề, họ tên nằm ở cuối đề
 // (dùng examFooter), theo đúng mẫu đề HSG các phòng GD&ĐT đang ra.
-function examHeader(f, style) {
+function examHeaderBody(f, style) {
   const half = Math.floor(PAGE.width / 2);
   const centred = { jc: 'center', spaceAfter: 0 };
   const essay = style === 'tl';
@@ -165,11 +165,11 @@ function examHeader(f, style) {
     false
   );
 
-  if (essay) return wrapBody(table);
+  if (essay) return table;
 
   // Đề Bộ ghi "Mã đề thi 101" (không có dấu hai chấm), họ tên và số báo danh
   // nằm trên hai dòng riêng ngay dưới đầu đề.
-  return wrapBody(
+  return (
     table +
       textPara(`Mã đề thi ${f.maDe || '...'}`, { jc: 'right', bold: true }) +
       textPara('Họ, tên thí sinh: ................................................................', {
@@ -181,8 +181,8 @@ function examHeader(f, style) {
 }
 
 // Khối kết đề tự luận: dòng Hết, lời dặn và chỗ ghi họ tên thí sinh.
-function examFooter() {
-  return wrapBody(
+function examFooterBody() {
+  return (
     textPara('…………..Hết…………', { jc: 'center', bold: true }) +
       textPara(
         'Thí sinh không được sử dụng máy tính cầm tay. Cán bộ coi thi không giải thích gì thêm.',
@@ -226,8 +226,8 @@ function sectionText(which, count, brief) {
   );
 }
 
-function sectionHeading(which, count, brief) {
-  return wrapBody(textPara(sectionText(which, count, brief), { bold: true }));
+function sectionPara(which, count, brief) {
+  return textPara(sectionText(which, count, brief), { bold: true });
 }
 
 const MC_LABELS = ['A.', 'B.', 'C.', 'D.'];
@@ -275,17 +275,17 @@ function essayQuestion(no, opts) {
 
 const QUESTION_BUILDERS = { mc: multipleChoice, tf: trueFalse, sa: shortAnswer };
 
-function questionBlock(kind, start, count, cols) {
+function questionBody(kind, start, count, cols) {
   const build = QUESTION_BUILDERS[kind];
   let out = '';
   for (let i = 0; i < count; i += 1) out += build(start + i, cols);
-  return wrapBody(out);
+  return out;
 }
 
-function essayBlock(start, count, opts) {
+function essayBody(start, count, opts) {
   let out = '';
   for (let i = 0; i < count; i += 1) out += essayQuestion(start + i, opts);
-  return wrapBody(out);
+  return out;
 }
 
 // Bảng hướng dẫn chấm (Câu | Ý | Nội dung | Điểm) và bảng cấu trúc đề
@@ -411,4 +411,35 @@ function variationTable(cfg) {
   }
 
   return wrapBody(tbl(widths, rows, true));
+}
+
+// ------------------------------------------------- các khối chèn được (gói OPC)
+
+const examHeader = (f, style) => wrapBody(examHeaderBody(f, style));
+const examFooter = () => wrapBody(examFooterBody());
+const sectionHeading = (which, count, brief) => wrapBody(sectionPara(which, count, brief));
+const questionBlock = (kind, start, count, cols) => wrapBody(questionBody(kind, start, count, cols));
+const essayBlock = (start, count, opts) => wrapBody(essayBody(start, count, opts));
+
+// Mỗi phần của đề trắc nghiệm dùng một dạng câu hỏi cố định theo cấu trúc từ 2025.
+const PART_KIND = { 1: 'mc', 2: 'tf', 3: 'sa' };
+
+// Dựng cả bộ xương của đề trong MỘT gói: đầu đề, các phần, đủ số câu, dòng kết.
+// Chèn một lần nhanh hơn hẳn bấm lần lượt, và Word chỉ phải nhận một gói OOXML.
+function examSkeleton(f, style, cfg) {
+  if (style === 'tl') {
+    return wrapBody(
+      examHeaderBody(f, 'tl') +
+        essayBody(1, cfg.essayCount, { diem: cfg.diem, subs: cfg.subs }) +
+        examFooterBody()
+    );
+  }
+
+  let out = examHeaderBody(f, 'tn');
+  [1, 2, 3].forEach((which) => {
+    const n = cfg.counts[which];
+    if (!n) return;
+    out += sectionPara(which, n, cfg.brief) + questionBody(PART_KIND[which], 1, n, cfg.cols);
+  });
+  return wrapBody(out);
 }

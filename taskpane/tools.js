@@ -296,10 +296,41 @@ function renderExamPanel(panel) {
       [fieldRow('Kiểu đề', styleSel)]
         .concat(headerRows)
         .concat([
-          button(
-            'Chèn đầu đề thi',
-            () => Pane.insertOoxml(examHeader(readHeaderForm(), style), 'Đã chèn đầu đề thi'),
-            true
+          h('div', { class: 'btn-row' }, [
+            button(
+              'Dựng cả khung đề',
+              () => {
+                const cfg =
+                  style === 'tl'
+                    ? {
+                        essayCount: Math.max(1, num('part-essay', 9)),
+                        diem: val('q-diem').trim() || '2,0',
+                        subs: num('q-subs', 0),
+                      }
+                    : {
+                        counts: {
+                          1: num('part-1', 12),
+                          2: num('part-2', 4),
+                          3: num('part-3', 6),
+                        },
+                        cols: num('q-cols', 2),
+                        brief: val('part-wording') === 'brief',
+                      };
+                Pane.insertOoxml(
+                  examSkeleton(readHeaderForm(), style, cfg),
+                  'Đã dựng cả khung đề'
+                );
+              },
+              true
+            ),
+            button('Chỉ đầu đề', () =>
+              Pane.insertOoxml(examHeader(readHeaderForm(), style), 'Đã chèn đầu đề thi')
+            ),
+          ]),
+          fieldRow('Số câu (đề tự luận)', input('part-essay', '9', { type: 'number', min: 1, max: 60 })),
+          note(
+            'Dựng cả khung đề chèn một lần ra đầu đề, các tiêu đề phần và đủ số câu trống — ' +
+              'số câu lấy theo mục "Tiêu đề phần" bên dưới. Sau đó chỉ việc gõ nội dung vào từng câu.'
           ),
         ]),
       true
@@ -327,6 +358,9 @@ function renderExamPanel(panel) {
     'full'
   );
   wordingSel.id = 'part-wording';
+
+  // Ô này chỉ có nghĩa với đề tự luận, gắn nhãn để applyStyle() ẩn khi cần.
+  panel.querySelector('#part-essay').closest('.field').dataset.only = 'tl';
 
   const partSection = section('Tiêu đề phần', [
     fieldRow('Câu chữ', wordingSel),

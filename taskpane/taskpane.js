@@ -1,8 +1,32 @@
 (function () {
   const FAV_KEY = 'mathSymbols.favorites';
+  const RECENT_KEY = 'mathSymbols.recent';
+  const SYMBOL_TAB = 'Ký hiệu';
+
   let activeCategory = TOOL_TABS[0].name;
+  let activeGroup = SYMBOL_CATEGORIES[0].name;
   let favorites = loadFavorites();
+  let recent = loadRecent();
   let inWord = false;
+
+  function loadRecent() {
+    try {
+      return JSON.parse(localStorage.getItem(RECENT_KEY)) || [];
+    } catch {
+      return [];
+    }
+  }
+
+  // Ghi lại mẫu vừa dùng để thanh nút nhanh luôn có sẵn thứ đang gõ dở.
+  function pushRecent(item) {
+    const key = keyOf(item);
+    recent = [key].concat(recent.filter((k) => k !== key)).slice(0, 12);
+    try {
+      localStorage.setItem(RECENT_KEY, JSON.stringify(recent));
+    } catch {
+      // không lưu được thì danh sách chỉ sống trong phiên này
+    }
+  }
 
   function loadFavorites() {
     try {
@@ -56,6 +80,8 @@
 
   function insert(item) {
     const isOmml = item.type === 'omml';
+    pushRecent(item);
+    renderQuickSyms();
     send(
       isOmml ? item.ooxml : item.symbol,
       isOmml,
@@ -123,26 +149,33 @@
     return tab;
   }
 
-  // Công cụ soạn đề là phần chính, nên đứng trước; bảng ký hiệu/công thức là
-  // phần phụ, gom xuống dưới một nhãn nhỏ cho đỡ chiếm chỗ.
+  // Bốn tab trên một hàng: ba công cụ soạn đề và một tab gom toàn bộ ký hiệu.
   function renderTabs() {
     const tabs = document.getElementById('tabs');
     tabs.innerHTML = '';
+    const row = document.createElement('div');
+    row.className = 'tab-row';
+    TOOL_TABS.forEach((t) => row.appendChild(tabButton(t.name, 'tab tool')));
+    row.appendChild(tabButton(SYMBOL_TAB, 'tab'));
+    tabs.appendChild(row);
+  }
 
-    const tools = document.createElement('div');
-    tools.className = 'tab-row';
-    TOOL_TABS.forEach((t) => tools.appendChild(tabButton(t.name, 'tab tool')));
-    tabs.appendChild(tools);
-
-    const label = document.createElement('div');
-    label.className = 'tab-group-label';
-    label.textContent = 'Ký hiệu & công thức';
-    tabs.appendChild(label);
-
-    const symbols = document.createElement('div');
-    symbols.className = 'tab-row';
-    SYMBOL_CATEGORIES.forEach((c) => symbols.appendChild(tabButton(c.name, 'tab')));
-    tabs.appendChild(symbols);
+  // Nhóm ký hiệu giờ là ô chọn trong tab, không còn mỗi nhóm một tab.
+  function renderGroupPicker(panel) {
+    const picker = document.createElement('select');
+    picker.className = 'group-picker';
+    SYMBOL_CATEGORIES.forEach((c) => {
+      const opt = document.createElement('option');
+      opt.value = c.name;
+      opt.textContent = `${c.name} (${c.items.length})`;
+      picker.appendChild(opt);
+    });
+    picker.value = activeGroup;
+    picker.addEventListener('change', (e) => {
+      activeGroup = e.target.value;
+      render();
+    });
+    panel.appendChild(picker);
   }
 
   function render() {
@@ -187,17 +220,13 @@
     searchBar.classList.remove('hidden');
     panel.className = 'category';
 
-    const favItems = allItems().filter(isFav);
-    if (favItems.length > 0) {
-      favSection.classList.remove('hidden');
-      renderGrid(document.getElementById('favorites-grid'), favItems, false);
-    } else {
-      favSection.classList.add('hidden');
-    }
+    // Mục yêu thích cũ đã được thanh nút nhanh thay thế, giấu đi cho gọn.
+    favSection.classList.add('hidden');
 
-    const category = SYMBOL_CATEGORIES.find((c) => c.name === activeCategory);
+    const category = SYMBOL_CATEGORIES.find((c) => c.name === activeGroup);
     const isTemplates = category.items.some((i) => i.type === 'omml');
-    panel.innerHTML = `<h3>${category.name}</h3>`;
+    panel.innerHTML = '';
+    renderGroupPicker(panel);
     if (isTemplates) {
       const hint = document.createElement('p');
       hint.className = 'hint';
@@ -208,6 +237,101 @@
     const grid = document.createElement('div');
     panel.appendChild(grid);
     renderGrid(grid, category.items, isTemplates);
+  }
+
+  // ------------------------------------------------ thanh nút nhanh (luôn thấy)
+
+  // Thao tác lặp nhiều nhất khi soạn đề là "chèn câu tiếp theo" và "chèn lại
+  // công thức vừa dùng", nên hai thứ đó nằm trên thanh dính, không phải cuộn tìm.
+  const QUICK_KINDS = [
+    ['mc', 'Trắc nghiệm'],
+    ['tf', 'Đúng / Sai'],
+    ['sa', 'Trả lời ngắn'],
+    ['tl', 'Tự luận'],
+  ];
+
+  function nextNoBox() {
+    return document.getElementById('quick-no');
+  }
+
+  // Ô "Bắt đầu từ câu" của tab Đề thi và ô trên thanh nhanh phải luôn khớp nhau.
+  function setNextNo(n) {
+    const box = nextNoBox();
+    if (box) box.value = String(n);
+    const panelBox = document.getElementById('q-start');
+    if (panelBox) panelBox.value = String(n);
+  }
+
+  function insertNextQuestion() {
+    const no = Math.max(1, parseInt((nextNoBox() || {}).value, 10) || 1);
+    const kind = (document.getElementById('quick-kind') || {}).value || 'mc';
+    const cols = parseInt((document.getElementById('q-cols') || {}).value, 10) || 2;
+    const xml =
+      kind === 'tl'
+        ? essayBlock(no, 1, {
+            diem: (document.getElementById('q-diem') || {}).value || '2,0',
+            subs: parseInt((document.getElementById('q-subs') || {}).value, 10) || 0,
+          })
+        : questionBlock(kind, no, 1, cols);
+    send(xml, true, `Đã chèn câu ${no}`);
+    setNextNo(no + 1);
+  }
+
+  function renderQuickSyms() {
+    const box = document.getElementById('quick-syms');
+    if (!box) return;
+    const byKey = new Map(allItems().map((i) => [keyOf(i), i]));
+    const picks = favorites
+      .concat(recent)
+      .filter((k, i, arr) => arr.indexOf(k) === i)
+      .map((k) => byKey.get(k))
+      .filter(Boolean)
+      .slice(0, 8);
+
+    box.innerHTML = '';
+    if (picks.length === 0) {
+      box.appendChild(
+        Object.assign(document.createElement('span'), {
+          className: 'quick-empty',
+          textContent: 'Ký hiệu vừa dùng và đánh dấu ★ sẽ hiện ở đây.',
+        })
+      );
+      return;
+    }
+    picks.forEach((item) => {
+      const btn = document.createElement('button');
+      btn.className = 'quick-sym';
+      btn.textContent = item.symbol || item.preview || '?';
+      btn.title = item.name;
+      btn.addEventListener('click', () => insert(item));
+      box.appendChild(btn);
+    });
+  }
+
+  function buildQuickBar() {
+    const bar = document.createElement('div');
+    bar.className = 'quickbar';
+    bar.innerHTML =
+      '<div class="quick-row">' +
+      '<span class="quick-label">Câu</span>' +
+      '<input id="quick-no" type="number" min="1" value="1" />' +
+      '<select id="quick-kind"></select>' +
+      '<button id="quick-add" class="act primary">+ Chèn</button>' +
+      '</div><div id="quick-syms" class="quick-syms"></div>';
+
+    const kindSel = bar.querySelector('#quick-kind');
+    QUICK_KINDS.forEach(([value, label]) => {
+      const opt = document.createElement('option');
+      opt.value = value;
+      opt.textContent = label;
+      kindSel.appendChild(opt);
+    });
+    kindSel.value = 'mc';
+    bar.querySelector('#quick-add').addEventListener('click', insertNextQuestion);
+
+    const app = document.getElementById('app');
+    app.insertBefore(bar, document.getElementById('panel'));
+    renderQuickSyms();
   }
 
   function start(word) {
@@ -221,6 +345,7 @@
     document.getElementById('loading').classList.add('hidden');
     document.getElementById('app').classList.remove('hidden');
     document.getElementById('search').addEventListener('input', render);
+    buildQuickBar();
     render();
   }
 
