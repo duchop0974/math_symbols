@@ -9,10 +9,32 @@ const W_NS = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/m
 // dưới đây cố tình để trống <m:num/>, <m:e/>... thay vì nhét sẵn chữ.
 const CTRL = '<m:ctrlPr><w:rPr><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:i/></w:rPr></m:ctrlPr>';
 
-// oMath (inline) chứ không phải oMathPara: công thức nằm trong dòng văn bản nên
-// chèn tiếp mẫu khác khi con trỏ đang trong công thức sẽ ghép vào cùng vùng toán.
+// Word mở dữ liệu Ooxml nhận được như một tài liệu tạm, nên nó phải là gói Flat
+// OPC hoàn chỉnh — fragment <w:p> rời sẽ bị báo "problem with its contents".
+// Bên trong dùng oMath (inline) chứ không phải oMathPara, để công thức nằm trong
+// dòng văn bản và ghép được với công thức đang có.
+const RELS_NS = 'http://schemas.openxmlformats.org/package/2006/relationships';
+const PKG_NS = 'http://schemas.microsoft.com/office/2006/xmlPackage';
+const DOC_REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument';
+const DOC_TYPE =
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml';
+
 function wrapOMath(inner) {
-  return `<w:p ${W_NS} ${MATH_NS}><m:oMath>${inner}</m:oMath></w:p>`;
+  return (
+    '<?xml version="1.0" standalone="yes"?>' +
+    '<?mso-application progid="Word.Document"?>' +
+    `<pkg:package xmlns:pkg="${PKG_NS}">` +
+    '<pkg:part pkg:name="/_rels/.rels" ' +
+    'pkg:contentType="application/vnd.openxmlformats-package.relationships+xml" pkg:padding="512">' +
+    `<pkg:xmlData><Relationships xmlns="${RELS_NS}">` +
+    `<Relationship Id="rId1" Type="${DOC_REL}" Target="word/document.xml"/>` +
+    '</Relationships></pkg:xmlData></pkg:part>' +
+    `<pkg:part pkg:name="/word/document.xml" pkg:contentType="${DOC_TYPE}">` +
+    `<pkg:xmlData><w:document ${W_NS} ${MATH_NS}><w:body>` +
+    `<w:p><m:oMath>${inner}</m:oMath></w:p>` +
+    '</w:body></w:document></pkg:xmlData></pkg:part>' +
+    '</pkg:package>'
+  );
 }
 
 const SYMBOL_CATEGORIES = [
