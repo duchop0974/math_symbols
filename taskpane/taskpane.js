@@ -155,8 +155,12 @@
     if (query) {
       favSection.classList.add('hidden');
       panel.className = 'category';
+      // Soi cả `preview` để gõ thẳng ký hiệu (vd "|", "∫", "√") cũng tìm ra mẫu.
       const matches = allItems().filter(
-        (i) => i.name.toLowerCase().includes(query) || (i.symbol || '').includes(query)
+        (i) =>
+          i.name.toLowerCase().includes(query) ||
+          (i.symbol || '').includes(query) ||
+          (i.preview || '').toLowerCase().includes(query)
       );
       panel.innerHTML = '<h3>Kết quả tìm kiếm</h3>';
       const grid = document.createElement('div');
