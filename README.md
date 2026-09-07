@@ -19,18 +19,18 @@ Tab **Đề thi** xếp theo việc chính trước, việc lẻ sau:
 4. **Định dạng chuẩn** — phông, cỡ chữ, lề trang, giãn dòng; đặt một lần rồi thôi.
 5. **Nếu đề phải nộp bằng MathType**.
 
-Mục **Dựng cả khung đề** chứa cả kiểu đề, thông tin đầu đề và một danh sách phần tự thêm/bớt — không cố định ba phần:
+Mục **Dựng cả khung đề** chứa mọi thứ để ra một đề hoàn chỉnh. **Không phải chọn "kiểu đề"** — đầu đề ghép từ các dòng rời, ô nào để trống thì dòng đó không xuất hiện, nên một biểu mẫu ra được mọi loại đề:
 
-| | |
+| Điền | Kết quả |
 |---|---|
-| Số phần | thêm/bớt tuỳ ý, đánh số La Mã tự cập nhật |
-| Mỗi phần | tự chọn dạng câu (trắc nghiệm A–D / đúng-sai / trả lời ngắn / tự luận), số câu, số cột phương án hoặc điểm và số ý |
-| Tiêu đề phần | để trống thì tự sinh theo câu chữ đề Bộ GD&ĐT từ 2025, gõ vào để thay bằng chữ của mình; tắt hẳn bằng ô *Có tiêu đề phần* |
-| Đánh số | lại từ 1 mỗi phần (chuẩn đề Bộ) hoặc liên tục cả đề |
-| Đầu đề, dòng kết | bật/tắt riêng |
-| Nút ⤓ | chèn riêng một phần |
+| Cơ quan · Trường · Nhãn đề · Số trang | cột trái của đầu đề |
+| Kỳ thi · Lớp · Năm học · Nhãn dòng môn · Môn · Thời gian · Ghi chú thời gian | cột phải |
+| Mã đề | dòng `Mã đề thi 101`, bỏ trống thì không có |
+| Dòng họ tên & SBD | bật/tắt |
 
-Dòng tóm tắt cập nhật ngay theo từng ô — *"Sẽ dựng: đầu đề + Phần I 12 câu trắc nghiệm + Phần II 4 câu đúng/sai + Phần III 6 câu trả lời ngắn + dòng kết đề — tổng 22 câu, đánh số lại từ 1 mỗi phần."* — nên biết trước sẽ ra gì rồi mới bấm **Dựng vào Word**. Cấu hình được nhớ riêng cho từng kiểu đề.
+Ví dụ cùng một biểu mẫu: điền `BỘ GIÁO DỤC VÀ ĐÀO TẠO` + mã đề ra đầu đề thi tốt nghiệp THPT; đổi sang `PHÒNG GD&ĐT ...`, thêm lớp và năm học, bỏ mã đề, tắt dòng họ tên, đổi nhãn môn thành `MÔN` là ra đầu đề học sinh giỏi cấp huyện; xoá gần hết chỉ để trường và thời gian là ra đề kiểm tra 15 phút.
+
+Bên dưới là danh sách phần tự thêm/bớt — không cố định ba phần:
 
 - 6 nhóm ký hiệu Unicode: Hy Lạp, Toán tử, Tập hợp, Logic, Mũi tên, Giải tích — click để chèn vào vị trí con trỏ.
 - 65 mẫu công thức OMML chia 5 nhóm — chèn thành Equation Object thật của Word với **ô trống điền được**, Tab để nhảy giữa các ô, lồng được vào nhau:

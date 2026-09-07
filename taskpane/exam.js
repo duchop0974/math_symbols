@@ -122,62 +122,49 @@ function tbl(widths, rowsXml, bordered) {
 
 // ---------------------------------------------------------------- đầu đề thi
 
-// style 'tn': đề trắc nghiệm, có mã đề và dòng họ tên ngay dưới đầu đề.
-// style 'tl': đề tự luận / học sinh giỏi — không có mã đề, họ tên nằm ở cuối đề
-// (dùng examFooter), theo đúng mẫu đề HSG các phòng GD&ĐT đang ra.
-function examHeaderBody(f, style) {
+// Đầu đề ghép từ các dòng rời, ô nào để trống thì dòng đó biến mất — nhờ vậy một
+// biểu mẫu duy nhất ra được cả đề Bộ, đề Sở, đề trường lẫn đề học sinh giỏi,
+// không phải chọn "kiểu đề" nào cả.
+function examHeaderBody(f) {
   const half = Math.floor(PAGE.width / 2);
   const centred = { jc: 'center', spaceAfter: 0 };
-  const essay = style === 'tl';
+  const line = (text, opts) => (text ? textPara(text, { ...centred, ...opts }) : '');
 
-  let left = textPara(f.so || (essay ? 'PHÒNG GD&ĐT ...............' : 'SỞ GD&ĐT ...............'), centred);
-  left += essay
-    ? textPara('ĐỀ CHÍNH THỨC', { ...centred, bold: true })
-    : textPara(f.truong || 'ĐỀ THI CHÍNH THỨC', { ...centred, bold: true }) +
-      textPara(`(Đề thi có ${f.soTrang || '...'} trang)`, { ...centred, italic: true });
+  const left =
+    line(f.so) +
+    line(f.truong, { bold: true }) +
+    line(f.deLabel, { bold: true }) +
+    line(f.soTrang ? `(Đề thi có ${f.soTrang} trang)` : '', { italic: true });
 
-  let right = textPara(f.kyThi || (essay ? 'ĐỀ THI HỌC SINH GIỎI' : 'ĐỀ KIỂM TRA CUỐI HỌC KỲ I'), {
-    ...centred,
-    bold: true,
-  });
-  if (essay) {
-    const lop = `LỚP ${f.khoi || '...'}`;
-    right +=
-      textPara(f.namHoc ? `${lop}, NĂM HỌC ${f.namHoc}` : lop, { ...centred, bold: true }) +
-      textPara(`MÔN: ${(f.mon || 'Toán').toUpperCase()}`, { ...centred, bold: true }) +
-      textPara(
-        `Thời gian làm bài: ${f.thoiGian || '120'} phút (không kể thời gian giao đề)`,
-        { ...centred, italic: true }
-      ) +
-      textPara(`Đề thi này gồm ${f.soTrang || '01'} trang`, { ...centred, italic: true });
-  } else {
-    right +=
-      textPara(`Môn thi: ${(f.mon || 'Toán').toUpperCase()}`, { ...centred, bold: true }) +
-      textPara(
-        `Thời gian làm bài: ${f.thoiGian || '90'} phút, không kể thời gian phát đề`,
-        { ...centred, italic: true }
-      );
-  }
+  const lop = [f.khoi ? `LỚP ${f.khoi}` : '', f.namHoc ? `NĂM HỌC ${f.namHoc}` : '']
+    .filter(Boolean)
+    .join(', ');
+  const gio = f.thoiGian
+    ? `Thời gian làm bài: ${f.thoiGian} phút` + (f.ghiChuGio ? ` (${f.ghiChuGio})` : '')
+    : '';
+  const right =
+    line(f.kyThi, { bold: true }) +
+    line(lop, { bold: true }) +
+    line(f.mon ? `${f.monLabel || 'Môn thi'}: ${f.mon.toUpperCase()}` : '', { bold: true }) +
+    line(gio, { italic: true });
 
-  const table = tbl(
-    [half, half],
-    tr(tc(half, left, { vAlign: 'top' }) + tc(half, right, { vAlign: 'top' })),
-    false
-  );
+  let out =
+    left || right
+      ? tbl(
+          [half, half],
+          tr(tc(half, left, { vAlign: 'top' }) + tc(half, right, { vAlign: 'top' })),
+          false
+        )
+      : '';
 
-  if (essay) return table;
-
-  // Đề Bộ ghi "Mã đề thi 101" (không có dấu hai chấm), họ tên và số báo danh
-  // nằm trên hai dòng riêng ngay dưới đầu đề.
-  return (
-    table +
-      textPara(`Mã đề thi ${f.maDe || '...'}`, { jc: 'right', bold: true }) +
+  if (f.maDe) out += textPara(`Mã đề thi ${f.maDe}`, { jc: 'right', bold: true });
+  if (f.hoTen) {
+    out +=
       textPara('Họ, tên thí sinh: ................................................................', {
         spaceAfter: 0,
-      }) +
-      textPara('Số báo danh: ................................................................') +
-      emptyPara()
-  );
+      }) + textPara('Số báo danh: ................................................................');
+  }
+  return out + emptyPara();
 }
 
 // Khối kết đề tự luận: dòng Hết, lời dặn và chỗ ghi họ tên thí sinh.
@@ -197,9 +184,6 @@ function examFooterBody() {
 
 // ---------------------------------------------------------------- câu hỏi
 
-// Câu chữ lấy đúng theo đề tham khảo/chính thức của Bộ GD&ĐT từ 2025. Lưu ý mỗi
-// phần đánh số lại từ câu 1, không đánh số liên tục qua cả ba phần.
-// Số câu mặc định theo đề Toán tốt nghiệp THPT: 12 – 4 – 6.
 // Câu chữ lấy đúng theo đề tham khảo/chính thức của Bộ GD&ĐT từ 2025, nhưng số
 // phần và dạng câu của mỗi phần là do người dùng đặt chứ không cố định.
 const KIND_TEXT = {
@@ -441,7 +425,7 @@ function variationTable(cfg) {
 
 // ------------------------------------------------- các khối chèn được (gói OPC)
 
-const examHeader = (f, style) => wrapBody(examHeaderBody(f, style));
+const examHeader = (f) => wrapBody(examHeaderBody(f));
 const examFooter = () => wrapBody(examFooterBody());
 const questionBlock = (kind, start, count, cols) => wrapBody(questionBody(kind, start, count, cols));
 const essayBlock = (start, count, opts) => wrapBody(essayBody(start, count, opts));
@@ -466,8 +450,8 @@ const partBlock = (part, index, from, brief, withTitle) =>
 // Dựng cả bộ xương của đề trong MỘT gói: đầu đề, các phần theo đúng danh sách
 // người dùng đặt, rồi dòng kết. Chèn một lần nhanh hơn hẳn bấm lần lượt.
 // cfg = { header, footer, continuous, brief, parts: [...] }
-function examSkeleton(f, style, cfg) {
-  let out = cfg.header === false ? '' : examHeaderBody(f, style);
+function examSkeleton(f, cfg) {
+  let out = cfg.header === false ? '' : examHeaderBody(f);
   let no = 1;
 
   cfg.parts.forEach((part, i) => {

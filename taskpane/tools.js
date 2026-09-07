@@ -164,7 +164,6 @@ const num = (id, fallback) => {
 
 // ---------------------------------------------------------------- tab Đề thi
 
-const STYLE_KEY = 'mathSymbols.examStyle';
 const PARTS_KEY = 'mathSymbols.parts';
 
 const KIND_OPTIONS = [
@@ -182,76 +181,68 @@ const KIND_SHORT = {
   tl: 'tự luận',
 };
 
-// Mặc định: đề trắc nghiệm theo cấu trúc Bộ GD&ĐT từ 2025 (12 – 4 – 6), đề tự
-// luận là một mạch câu không chia phần nên tiêu đề để rỗng.
-function defaultParts(style) {
-  if (style === 'tl') return [{ kind: 'tl', count: 9, diem: '2,0', subs: 0 }];
-  return [
-    { kind: 'mc', count: 12, cols: 2 },
-    { kind: 'tf', count: 4 },
-    { kind: 'sa', count: 6 },
-  ];
-}
+// Mặc định theo cấu trúc đề Bộ GD&ĐT từ 2025 (12 – 4 – 6); đề khác thì thêm/bớt.
+const defaultParts = () => [
+  { kind: 'mc', count: 12, cols: 2 },
+  { kind: 'tf', count: 4 },
+  { kind: 'sa', count: 6 },
+];
 
-function loadParts(style) {
+function loadParts() {
   try {
     const saved = JSON.parse(localStorage.getItem(PARTS_KEY));
-    if (saved && Array.isArray(saved[style]) && saved[style].length) return saved[style];
+    if (Array.isArray(saved) && saved.length) return saved;
   } catch {
     // hỏng localStorage thì quay về mặc định
   }
-  return defaultParts(style);
+  return defaultParts();
 }
 
-function saveParts(style, parts) {
+function saveParts(parts) {
   try {
-    const all = JSON.parse(localStorage.getItem(PARTS_KEY)) || {};
-    all[style] = parts;
-    localStorage.setItem(PARTS_KEY, JSON.stringify(all));
+    localStorage.setItem(PARTS_KEY, JSON.stringify(parts));
   } catch {
     // không lưu được thì chỉ mất phần nhớ giữa các lần mở
   }
 }
 
-// Ô nào chỉ dùng cho một kiểu đề thì đánh dấu bằng `only`.
+// Mỗi ô là một dòng của đầu đề; để trống thì dòng đó không được chèn.
 const HEADER_FIELDS = [
-  ['so', 'Sở / Phòng GD&ĐT', 'PHÒNG GD&ĐT ...'],
-  ['truong', 'Trường', 'TRƯỜNG THPT ...', 'tn'],
-  ['kyThi', 'Kỳ thi', 'ĐỀ GIAO LƯU HỌC SINH GIỎI CẤP HUYỆN'],
+  ['so', 'Cơ quan quản lý', 'SỞ GD&ĐT ... / PHÒNG GD&ĐT ...'],
+  ['truong', 'Trường / đơn vị', 'TRƯỜNG THPT ...'],
+  ['deLabel', 'Nhãn đề', 'ĐỀ CHÍNH THỨC'],
+  ['soTrang', 'Số trang', '04'],
+  ['kyThi', 'Kỳ thi', 'KỲ THI TỐT NGHIỆP THPT NĂM 2025'],
+  ['khoi', 'Lớp', '12'],
+  ['namHoc', 'Năm học', '2024-2025'],
+  ['monLabel', 'Nhãn dòng môn', 'Môn thi'],
   ['mon', 'Môn', 'Toán'],
-  ['khoi', 'Lớp', '6'],
-  ['namHoc', 'Năm học', '2022-2023', 'tl'],
-  ['thoiGian', 'Thời gian (phút)', '120'],
-  ['soTrang', 'Số trang', '01'],
-  ['maDe', 'Mã đề', '101', 'tn'],
+  ['thoiGian', 'Thời gian (phút)', '90'],
+  ['ghiChuGio', 'Ghi chú thời gian', 'không kể thời gian phát đề'],
+  ['maDe', 'Mã đề', '101'],
 ];
 
-function loadStyle() {
-  try {
-    return localStorage.getItem(STYLE_KEY) || 'tl';
-  } catch {
-    return 'tl';
-  }
-}
-
-function saveStyle(style) {
-  try {
-    localStorage.setItem(STYLE_KEY, style);
-  } catch {
-    // không lưu được thì chỉ mất phần nhớ giữa các lần mở
-  }
-}
+// Mồi sẵn cho lần mở đầu tiên, để bấm dựng là ra đầu đề dùng được ngay; những ô
+// riêng của từng trường (cơ quan, kỳ thi) để trống cho giáo viên tự điền.
+const DEFAULT_HEADER = {
+  deLabel: 'ĐỀ CHÍNH THỨC',
+  monLabel: 'Môn thi',
+  mon: 'Toán',
+  thoiGian: '90',
+  ghiChuGio: 'không kể thời gian phát đề',
+  hoTen: true,
+};
 
 function loadHeader() {
   try {
-    return JSON.parse(localStorage.getItem(HEADER_KEY)) || {};
+    return JSON.parse(localStorage.getItem(HEADER_KEY)) || DEFAULT_HEADER;
   } catch {
-    return {};
+    return DEFAULT_HEADER;
   }
 }
 
 function readHeaderForm() {
-  const data = {};
+  const data = { hoTen: !!(document.getElementById('hdr-hoTen') || {}).checked };
   HEADER_FIELDS.forEach(([key]) => {
     data[key] = val(`hdr-${key}`).trim();
   });
@@ -265,8 +256,7 @@ function readHeaderForm() {
 
 function renderExamPanel(panel) {
   const saved = loadHeader();
-  let style = loadStyle();
-  let parts = loadParts(style);
+  let parts = loadParts();
 
   const check = (id, checked) => {
     const box = h('input', { id, type: 'checkbox' });
@@ -274,45 +264,15 @@ function renderExamPanel(panel) {
     return box;
   };
 
-  // ---------------------------------------------------------- kiểu đề & đầu đề
+  // ------------------------------------------------------------- đầu đề thi
 
-  const styleSel = select(
-    [
-      ['tl', 'Tự luận / học sinh giỏi'],
-      ['tn', 'Trắc nghiệm (có mã đề)'],
-    ],
-    style,
-    (e) => {
-      style = e.target.value;
-      saveStyle(style);
-      parts = loadParts(style);
-      // Đề Bộ đánh số lại từ 1 mỗi phần; đề tự luận thường đánh liên tục cả đề.
-      const cont = document.getElementById('skel-continuous');
-      if (cont) cont.checked = style === 'tl';
-      const titles = document.getElementById('skel-titles');
-      if (titles) titles.checked = style === 'tn';
-      renderParts();
-      applyStyle();
-    }
+  // Mỗi ô là một dòng của đầu đề; để trống thì dòng đó không xuất hiện, nên cùng
+  // một biểu mẫu ra được đề Bộ, đề Sở, đề trường hay đề học sinh giỏi.
+  const headerRows = HEADER_FIELDS.map(([key, label, placeholder]) =>
+    fieldRow(label, input(`hdr-${key}`, saved[key], { placeholder }))
   );
-
-  const rows = {};
-  const headerRows = HEADER_FIELDS.map(([key, label, placeholder, only]) => {
-    const row = fieldRow(label, input(`hdr-${key}`, saved[key], { placeholder }));
-    rows[key] = { row, only };
-    return row;
-  });
-
-  // Ẩn ô không thuộc kiểu đề đang chọn, và bật/tắt các khối chỉ hợp với một kiểu.
-  function applyStyle() {
-    Object.values(rows).forEach(({ row, only }) => {
-      row.classList.toggle('hidden', !!only && only !== style);
-    });
-    panel.querySelectorAll('[data-only]').forEach((el) => {
-      el.classList.toggle('hidden', el.dataset.only !== style);
-    });
-    skelSummary();
-  }
+  const hoTenBox = check('hdr-hoTen', saved.hoTen !== false);
+  headerRows.push(fieldRow('Dòng họ tên & số báo danh', hoTenBox));
 
   // -------------------------------------------------------- các phần của đề
 
@@ -419,7 +379,7 @@ function renderExamPanel(panel) {
   }
 
   function touchParts() {
-    saveParts(style, parts);
+    saveParts(parts);
     skelSummary();
   }
 
@@ -453,11 +413,10 @@ function renderExamPanel(panel) {
       : 'Chưa chọn gì để dựng.';
   }
 
-  // Mục chính, đứng đầu: mọi thứ để ra một đề hoàn chỉnh nằm gọn trong đây, theo
-  // đúng thứ tự giáo viên nghĩ — đề loại gì, của ai, gồm những phần nào.
+  // Mục chính, đứng đầu: mọi thứ để ra một đề hoàn chỉnh nằm gọn trong đây.
   const skelSection = section(
     'Dựng cả khung đề',
-    [fieldRow('Kiểu đề', styleSel)].concat(headerRows).concat([
+    headerRows.concat([
       h('div', { class: 'sub-head', text: 'Các phần của đề' }),
       partsBox,
       h('div', { class: 'btn-row' }, [
@@ -467,7 +426,7 @@ function renderExamPanel(panel) {
           touchParts();
         }),
         button('Khôi phục mặc định', () => {
-          parts = defaultParts(style);
+          parts = defaultParts();
           renderParts();
           touchParts();
         }),
@@ -475,8 +434,8 @@ function renderExamPanel(panel) {
       h('div', { class: 'sub-head', text: 'Tuỳ chọn' }),
       fieldRow('Kèm đầu đề thi', check('skel-header', true)),
       fieldRow('Kèm dòng kết đề', check('skel-footer', true)),
-      fieldRow('Đánh số liên tục cả đề', check('skel-continuous', style === 'tl')),
-      fieldRow('Có tiêu đề phần', check('skel-titles', style === 'tn')),
+      fieldRow('Đánh số liên tục cả đề', check('skel-continuous', false)),
+      fieldRow('Có tiêu đề phần', check('skel-titles', true)),
       fieldRow('Tiêu đề phần ngắn gọn', check('skel-brief', false)),
       h('p', { id: 'skel-summary', class: 'measure' }),
       button(
@@ -488,14 +447,14 @@ function renderExamPanel(panel) {
             Pane.toast('Chưa chọn phần nào để dựng.', true);
             return;
           }
-          Pane.insertOoxml(examSkeleton(readHeaderForm(), style, cfg), 'Đã dựng cả khung đề');
+          Pane.insertOoxml(examSkeleton(readHeaderForm(), cfg), 'Đã dựng cả khung đề');
         },
         true
       ),
       note(
-        'Thêm bao nhiêu phần cũng được, mỗi phần tự chọn dạng câu và số câu. Ô tiêu đề để ' +
-          'trống thì dùng câu chữ tự sinh theo đề Bộ GD&ĐT từ 2025; gõ vào để thay bằng chữ ' +
-          'của mình. Nút ⤓ chèn riêng một phần.'
+        'Ô đầu đề nào để trống thì dòng đó không xuất hiện — bỏ trống Mã đề là đề không có ' +
+          'mã, bỏ trống Năm học là không có dòng năm học. Thêm bao nhiêu phần cũng được, mỗi ' +
+          'phần tự chọn dạng câu và số câu. Nút ⤓ chèn riêng một phần.'
       ),
     ]),
     true
@@ -517,12 +476,6 @@ function renderExamPanel(panel) {
     '2'
   );
   qCols.id = 'q-cols';
-  const colsRow = fieldRow('Xếp phương án', qCols);
-  colsRow.dataset.only = 'tn';
-  const diemRow = fieldRow('Điểm mỗi câu', input('q-diem', '2,0', { placeholder: '2,0' }));
-  diemRow.dataset.only = 'tl';
-  const subsRow = fieldRow('Số ý mỗi câu', input('q-subs', '0', { type: 'number', min: 0, max: 5 }));
-  subsRow.dataset.only = 'tl';
 
   const advance = (start, count) => {
     const startBox = document.getElementById('q-start');
@@ -555,7 +508,7 @@ function renderExamPanel(panel) {
       [
         h('div', { class: 'btn-row' }, [
           button('Đầu đề thi', () =>
-            Pane.insertOoxml(examHeader(readHeaderForm(), style), 'Đã chèn đầu đề thi')
+            Pane.insertOoxml(examHeader(readHeaderForm()), 'Đã chèn đầu đề thi')
           ),
           button('Dòng kết đề (…Hết…)', () =>
             Pane.insertOoxml(examFooter(), 'Đã chèn phần kết đề')
@@ -564,16 +517,14 @@ function renderExamPanel(panel) {
         h('div', { class: 'sub-head', text: 'Chèn thêm câu hỏi' }),
         startRow,
         countRow,
-        colsRow,
-        diemRow,
-        subsRow,
-        h('div', { class: 'btn-row', 'data-only': 'tn' }, [
+        fieldRow('Xếp phương án', qCols),
+        fieldRow('Điểm mỗi câu tự luận', input('q-diem', '2,0', { placeholder: '2,0' })),
+        fieldRow('Số ý mỗi câu tự luận', input('q-subs', '0', { type: 'number', min: 0, max: 5 })),
+        h('div', { class: 'btn-row' }, [
           button('Trắc nghiệm A–D', () => insertQuestions('mc', 'câu trắc nghiệm'), true),
           button('Đúng / Sai', () => insertQuestions('tf', 'câu đúng/sai')),
           button('Trả lời ngắn', () => insertQuestions('sa', 'câu trả lời ngắn')),
-        ]),
-        h('div', { class: 'btn-row', 'data-only': 'tl' }, [
-          button('Câu tự luận (có điểm)', insertEssay, true),
+          button('Tự luận', insertEssay),
         ]),
         note(
           'Câu chèn ra để trống phần nội dung — bấm vào sau "Câu n." để gõ đề. ' +
@@ -584,25 +535,25 @@ function renderExamPanel(panel) {
     )
   );
 
-  const hdc = section('Bảng hướng dẫn chấm', [
-    fieldRow('Số dòng trống', input('hdc-rows', '10', { type: 'number', min: 1, max: 60 })),
-    h('div', { class: 'btn-row' }, [
-      button('Câu | Ý | Nội dung | Điểm', () =>
-        Pane.insertOoxml(
-          gradingTable(Math.max(1, num('hdc-rows', 10)), true),
-          'Đã chèn bảng hướng dẫn chấm'
-        )
-      ),
-      button('Câu | Nội dung | Điểm', () =>
-        Pane.insertOoxml(
-          gradingTable(Math.max(1, num('hdc-rows', 10)), false),
-          'Đã chèn bảng cấu trúc đề'
-        )
-      ),
-    ]),
-  ]);
-  hdc.dataset.only = 'tl';
-  panel.appendChild(hdc);
+  panel.appendChild(
+    section('Bảng hướng dẫn chấm', [
+      fieldRow('Số dòng trống', input('hdc-rows', '10', { type: 'number', min: 1, max: 60 })),
+      h('div', { class: 'btn-row' }, [
+        button('Câu | Ý | Nội dung | Điểm', () =>
+          Pane.insertOoxml(
+            gradingTable(Math.max(1, num('hdc-rows', 10)), true),
+            'Đã chèn bảng hướng dẫn chấm'
+          )
+        ),
+        button('Câu | Nội dung | Điểm', () =>
+          Pane.insertOoxml(
+            gradingTable(Math.max(1, num('hdc-rows', 10)), false),
+            'Đã chèn bảng cấu trúc đề'
+          )
+        ),
+      ]),
+    ])
+  );
 
   // --------------------------------------- thiết lập đặt một lần, ít phải đụng
 
@@ -665,7 +616,7 @@ function renderExamPanel(panel) {
 
   renderParts();
   savePageSetting();
-  applyStyle();
+  skelSummary();
 }
 
 // -------------------------------------------------- tab Bảng biến thiên
