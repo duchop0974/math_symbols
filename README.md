@@ -47,6 +47,8 @@ powershell -File set-host.ps1 -User duchop0974 -Repo math_symbols
 
 ## Cài vào Word bằng bộ cài
 
+Tải bộ cài mới nhất tại [Releases](https://github.com/duchop0974/math_symbols/releases/latest).
+
 Người dùng cuối chỉ cần chạy `MathSymbolsSetup.exe`:
 
 1. Đóng Microsoft Word.
