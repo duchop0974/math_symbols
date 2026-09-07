@@ -585,3 +585,43 @@ button.icon {
 }
 
 button.icon:hover { border-color: var(--accent); color: var(--accent); background: var(--hover); }
+
+/* Ô tìm ký hiệu nằm trong tab Chèn, không còn ở đầu task pane. */
+.sym-search {
+  width: 100%;
+  margin-bottom: 6px;
+  padding: 5px 7px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: inherit;
+  font-size: 12px;
+}
+
+.sym-search:focus { outline: none; border-color: var(--accent); }
+
+/* Ô phụ của thanh nút nhanh, hiện theo dạng câu đang chọn. */
+.quick-row #quick-cols {
+  flex: 0 0 62px;
+  padding: 4px 3px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: inherit;
+  font-size: 11px;
+}
+
+.quick-tl { display: flex; gap: 3px; }
+
+.quick-tl input {
+  width: 40px;
+  padding: 4px 3px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: inherit;
+  font-size: 11px;
+}

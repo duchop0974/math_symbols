@@ -4,21 +4,25 @@ Task pane add-in cho Microsoft Word (Windows) giúp giáo viên **soạn đề t
 
 ## Tính năng
 
-Task pane mở ra ở tab **Đề thi**. Bốn tab trên một hàng: *Đề thi · Bảng BT · Đáp án · Ký hiệu* (10 nhóm ký hiệu gom vào ô chọn nhóm trong tab Ký hiệu).
+Ba tab theo ba giai đoạn làm việc: **Tạo đề** → **Chèn** → **Hoàn thiện**.
+
+Mỗi phạm vi chỉ có đúng một đường chèn, không chồng lấn:
+
+| Chèn gì | Ở đâu |
+|---|---|
+| Một câu | thanh nút nhanh trên cùng |
+| Một phần | nút ⤓ ở dòng phần đó (tab Tạo đề) |
+| Cả đề | nút **Dựng vào Word** (tab Tạo đề) |
+| Một khối rời (đầu đề, dòng kết, bảng chấm) | mục *Khối rời của đề* (tab Chèn) |
 
 Trên cùng là **thanh nút nhanh** dính theo màn hình, luôn thấy dù đang ở mục nào:
 
-- ô số câu + dạng câu + nút **+ Chèn** — chèn câu tiếp theo rồi tự tăng số, dùng chung ô "Bắt đầu từ câu" với tab Đề thi;
+- ô số câu + dạng câu + ô phụ đổi theo dạng (số cột cho trắc nghiệm, điểm và số ý cho tự luận) + nút **+ Chèn** — chèn câu tiếp theo rồi tự tăng số;
 - hàng ký hiệu **vừa dùng và đánh dấu ★** — chèn lại công thức mà không phải rời tab đang làm.
 
-### Tab Đề thi
+### Tab Tạo đề
 
-1. **Dựng cả khung đề** (mở sẵn) — mọi thứ để ra một đề hoàn chỉnh trong một lần bấm.
-2. **Chèn từng khối** — đầu đề, dòng kết, thêm câu lẻ khi đề đã dựng xong.
-3. **Bảng hướng dẫn chấm** — chèn riêng, ngoài tuỳ chọn kèm sẵn ở mục 1.
-4. **Nếu đề phải nộp bằng MathType**.
-
-Mục **Dựng cả khung đề** chia bốn nhóm:
+Cả tab là việc dựng khung đề, chia bốn nhóm:
 
 **Định dạng** — phông (mặc định Times New Roman 12), cỡ chữ, lề trang và giãn dòng theo Nghị định 30/2020/NĐ-CP (A4, lề trái 30–35mm, phải 15–20mm, trên/dưới 20–25mm). Lề trang dùng để tính bề rộng bảng cho khớp cột chữ — add-in không đổi được lề của tài liệu, phải đặt trong Word.
 
@@ -46,15 +50,21 @@ Cùng một biểu mẫu: điền `BỘ GIÁO DỤC VÀ ĐÀO TẠO` + mã đề
 
 Cuối mục là **dòng tóm tắt cập nhật ngay theo từng ô** — *"Sẽ dựng: đầu đề + Phần I 12 câu trắc nghiệm + Phần II 4 câu đúng/sai + Phần III 6 câu trả lời ngắn + dòng kết đề — tổng 22 câu, đánh số lại từ 1 mỗi phần."* — nên biết trước sẽ ra gì rồi mới bấm **Dựng vào Word**. Toàn bộ cấu hình được nhớ giữa các lần mở.
 
-### Tab Bảng BT
+### Tab Chèn
 
-Dựng bảng biến thiên (3 dòng) hoặc bảng xét dấu (2 dòng): nhập nghiệm, chọn dấu từng khoảng, xem trước ngay trong task pane rồi chèn ra thành bảng Word thật; mũi tên ↗ ↘ tự suy ra từ dấu đạo hàm.
+Mọi thứ chèn thêm vào khi đang gõ nội dung:
 
-### Tab Đáp án
+- **Ký hiệu & công thức** (mở sẵn) — ô tìm, ô chọn nhóm và lưới mẫu; xem chi tiết bên dưới.
+- **Bảng biến thiên / xét dấu** — dựng bảng biến thiên (3 dòng) hoặc bảng xét dấu (2 dòng): nhập nghiệm, chọn dấu từng khoảng, xem trước ngay trong task pane rồi chèn ra thành bảng Word thật; mũi tên ↗ ↘ tự suy ra từ dấu đạo hàm.
+
+- **Khối rời của đề** — chèn đầu đề, dòng kết hoặc bảng hướng dẫn chấm khi đề đã dựng xong.
+- **Nếu đề phải nộp bằng MathType** — hướng dẫn ba bước.
+
+### Tab Hoàn thiện
 
 Chèn bảng đáp án từ chuỗi `1A 2B 3C` hoặc `ABCD...` (cả đáp án đúng/sai kiểu `1 ĐSSĐ`), bảng đáp án trống, đánh số lại toàn bộ câu hỏi, và **trộn đề thành nhiều mã** (xem mục riêng bên dưới).
 
-### Tab Ký hiệu
+### Bảng ký hiệu (trong tab Chèn)
 
 - 6 nhóm ký hiệu Unicode: Hy Lạp, Toán tử, Tập hợp, Logic, Mũi tên, Giải tích — click để chèn vào vị trí con trỏ.
 - 65 mẫu công thức OMML chia 5 nhóm — chèn thành Equation Object thật của Word với **ô trống điền được**, Tab để nhảy giữa các ô, lồng được vào nhau:
@@ -65,10 +75,6 @@ Chèn bảng đáp án từ chuỗi `1A 2B 3C` hoặc `ABCD...` (cả đáp án 
   - *Hàm số*: f(▫), g(▫), u(▫), f′(▫), f″(▫), y = f(▫), hàm hợp f(g(▫)), hàm ngược f⁻¹(▫), nguyên hàm ∫f(x)dx, tích phân có cận, F(x) + C, vi phân dx/dt (chữ d đứng đúng chuẩn), tập xác định D = ℝ∖{▫}.
 - Tìm kiếm theo tên tiếng Việt, tiếng Anh, hoặc gõ thẳng ký hiệu (`alpha`, `integral`, `phân số`, `|`, `∫`).
 - Đánh dấu yêu thích (★) và mẫu vừa dùng — hiện trên thanh nút nhanh, lưu trong localStorage của task pane.
-
-### MathType
-
-Nếu đơn vị bắt buộc nộp đề gõ bằng **MathType**: soạn cả đề bằng add-in rồi chuyển một lần ở bước cuối — Word → tab MathType → **Convert Equations** → nguồn *Word 2007 and later (OMML) equations*, phạm vi *Whole document*, đích *MathType equations (OLE objects)*. Hướng dẫn này có sẵn trong tab Đề thi.
 
 ## Cấu trúc
 
@@ -87,7 +93,7 @@ taskpane/
   symbols.js          # Dữ liệu ký hiệu + mẫu OMML + hàm đóng gói Flat OPC
   exam.js             # Dựng OOXML cho đầu đề, câu hỏi, bảng biến thiên, bảng đáp án
   shuffle.js          # Trộn đề nhiều mã: tách/ghép gói OPC, đảo câu và phương án
-  tools.js            # Form của 3 tab công cụ soạn đề thi
+  tools.js            # Form của 3 tab: Tạo đề, Chèn, Hoàn thiện
 ```
 
 Không có build step — toàn bộ là static file, host thẳng lên GitHub Pages.
