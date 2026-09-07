@@ -35,6 +35,65 @@ function wrapOMath(inner) {
   );
 }
 
+function tpl(name, preview, inner) {
+  return { name, preview, type: 'omml', ooxml: wrapOMath(inner) };
+}
+
+// Chữ đứng (tên hàm, ký hiệu vi phân) — không in nghiêng như biến số.
+function MTEXT(text) {
+  return `<m:r><m:rPr><m:sty m:val="p"/></m:rPr><m:t>${text}</m:t></m:r>`;
+}
+
+function DELIM(begChr, endChr, inner) {
+  return (
+    `<m:d><m:dPr><m:begChr m:val="${begChr}"/><m:endChr m:val="${endChr}"/>${CTRL}</m:dPr>` +
+    `${inner}</m:d>`
+  );
+}
+
+function NARY(chr, limLoc, hide = {}) {
+  const sub = hide.subHide ? '<m:subHide m:val="1"/>' : '';
+  const sup = hide.supHide ? '<m:supHide m:val="1"/>' : '';
+  return (
+    `<m:nary><m:naryPr><m:chr m:val="${chr}"/><m:limLoc m:val="${limLoc}"/>${sub}${sup}${CTRL}` +
+    '</m:naryPr><m:sub/><m:sup/><m:e/></m:nary>'
+  );
+}
+
+function MATRIX(rows, cols) {
+  const row = `<m:mr>${'<m:e/>'.repeat(cols)}</m:mr>`;
+  return (
+    `<m:m><m:mPr><m:mcs><m:mc><m:mcPr><m:count m:val="${cols}"/>` +
+    `<m:mcJc m:val="center"/></m:mcPr></m:mc></m:mcs>${CTRL}</m:mPr>` +
+    `${row.repeat(rows)}</m:m>`
+  );
+}
+
+function EQARR(rows) {
+  return `<m:eqArr><m:eqArrPr>${CTRL}</m:eqArrPr>${'<m:e/>'.repeat(rows)}</m:eqArr>`;
+}
+
+function FUNC(name) {
+  return (
+    `<m:func><m:funcPr>${CTRL}</m:funcPr><m:fName>${MTEXT(name)}</m:fName><m:e/></m:func>`
+  );
+}
+
+function ACC(chr) {
+  return `<m:acc><m:accPr><m:chr m:val="${chr}"/>${CTRL}</m:accPr><m:e/></m:acc>`;
+}
+
+function BAR(pos) {
+  return `<m:bar><m:barPr><m:pos m:val="${pos}"/>${CTRL}</m:barPr><m:e/></m:bar>`;
+}
+
+function GROUPCHR(chr, pos, vertJc) {
+  return (
+    `<m:groupChr><m:groupChrPr><m:chr m:val="${chr}"/><m:pos m:val="${pos}"/>` +
+    `<m:vertJc m:val="${vertJc}"/>${CTRL}</m:groupChrPr><m:e/></m:groupChr>`
+  );
+}
+
 const SYMBOL_CATEGORIES = [
   {
     name: 'Hy Lạp',
@@ -89,96 +148,130 @@ const SYMBOL_CATEGORIES = [
     ].map(([symbol, name]) => ({ symbol, name, type: 'unicode' })),
   },
   {
-    name: 'Mẫu công thức',
+    name: 'Phân số & mũ',
     items: [
-      {
-        name: 'Phân số',
-        preview: '▫⁄▫',
-        type: 'omml',
-        ooxml: wrapOMath(`<m:f><m:fPr>${CTRL}</m:fPr><m:num/><m:den/></m:f>`),
-      },
-      {
-        name: 'Căn bậc hai',
-        preview: '√▫',
-        type: 'omml',
-        ooxml: wrapOMath(
-          `<m:rad><m:radPr><m:degHide m:val="1"/>${CTRL}</m:radPr><m:deg/><m:e/></m:rad>`
-        ),
-      },
-      {
-        name: 'Căn bậc n',
-        preview: 'ⁿ√▫',
-        type: 'omml',
-        ooxml: wrapOMath(`<m:rad><m:radPr>${CTRL}</m:radPr><m:deg/><m:e/></m:rad>`),
-      },
-      {
-        name: 'Lũy thừa',
-        preview: '▫^▫',
-        type: 'omml',
-        ooxml: wrapOMath(`<m:sSup><m:sSupPr>${CTRL}</m:sSupPr><m:e/><m:sup/></m:sSup>`),
-      },
-      {
-        name: 'Chỉ số dưới',
-        preview: '▫_▫',
-        type: 'omml',
-        ooxml: wrapOMath(`<m:sSub><m:sSubPr>${CTRL}</m:sSubPr><m:e/><m:sub/></m:sSub>`),
-      },
-      {
-        name: 'Chỉ số trên+dưới',
-        preview: '▫_▫^▫',
-        type: 'omml',
-        ooxml: wrapOMath(
-          `<m:sSubSup><m:sSubSupPr>${CTRL}</m:sSubSupPr><m:e/><m:sub/><m:sup/></m:sSubSup>`
-        ),
-      },
-      {
-        name: 'Tích phân có cận',
-        preview: '∫▫',
-        type: 'omml',
-        ooxml: wrapOMath(
-          `<m:nary><m:naryPr><m:chr m:val="∫"/><m:limLoc m:val="subSup"/>${CTRL}</m:naryPr><m:sub/><m:sup/><m:e/></m:nary>`
-        ),
-      },
-      {
-        name: 'Tổng Σ có cận',
-        preview: '∑▫',
-        type: 'omml',
-        ooxml: wrapOMath(
-          `<m:nary><m:naryPr><m:chr m:val="∑"/><m:limLoc m:val="undOvr"/>${CTRL}</m:naryPr><m:sub/><m:sup/><m:e/></m:nary>`
-        ),
-      },
-      {
-        name: 'Tích Π có cận',
-        preview: '∏▫',
-        type: 'omml',
-        ooxml: wrapOMath(
-          `<m:nary><m:naryPr><m:chr m:val="∏"/><m:limLoc m:val="undOvr"/>${CTRL}</m:naryPr><m:sub/><m:sup/><m:e/></m:nary>`
-        ),
-      },
-      {
-        name: 'Giới hạn',
-        preview: 'lim ▫',
-        type: 'omml',
-        ooxml: wrapOMath(
-          `<m:func><m:funcPr>${CTRL}</m:funcPr><m:fName><m:limLow><m:limLowPr>${CTRL}</m:limLowPr><m:e><m:r><m:rPr><m:sty m:val="p"/></m:rPr><m:t>lim</m:t></m:r></m:e><m:lim/></m:limLow></m:fName><m:e/></m:func>`
-        ),
-      },
-      {
-        name: 'Ngoặc đơn',
-        preview: '(▫)',
-        type: 'omml',
-        ooxml: wrapOMath(
-          `<m:d><m:dPr><m:begChr m:val="("/><m:endChr m:val=")"/>${CTRL}</m:dPr><m:e/></m:d>`
-        ),
-      },
-      {
-        name: 'Ma trận 2x2',
-        preview: '[▫ ▫; ▫ ▫]',
-        type: 'omml',
-        ooxml: wrapOMath(
-          `<m:d><m:dPr><m:begChr m:val="["/><m:endChr m:val="]"/>${CTRL}</m:dPr><m:e><m:m><m:mPr><m:baseJc m:val="center"/>${CTRL}</m:mPr><m:mr><m:e/><m:e/></m:mr><m:mr><m:e/><m:e/></m:mr></m:m></m:e></m:d>`
-        ),
-      },
+      tpl('Phân số', '▫⁄▫', `<m:f><m:fPr>${CTRL}</m:fPr><m:num/><m:den/></m:f>`),
+      tpl(
+        'Phân số nghiêng',
+        '▫/▫',
+        `<m:f><m:fPr><m:type m:val="skw"/>${CTRL}</m:fPr><m:num/><m:den/></m:f>`
+      ),
+      tpl(
+        'Phân số một dòng',
+        '▫÷▫',
+        `<m:f><m:fPr><m:type m:val="lin"/>${CTRL}</m:fPr><m:num/><m:den/></m:f>`
+      ),
+      tpl(
+        'Xếp chồng (không gạch)',
+        '▫ ▫',
+        `<m:f><m:fPr><m:type m:val="noBar"/>${CTRL}</m:fPr><m:num/><m:den/></m:f>`
+      ),
+      tpl(
+        'Căn bậc hai',
+        '√▫',
+        `<m:rad><m:radPr><m:degHide m:val="1"/>${CTRL}</m:radPr><m:deg/><m:e/></m:rad>`
+      ),
+      tpl('Căn bậc n', 'ⁿ√▫', `<m:rad><m:radPr>${CTRL}</m:radPr><m:deg/><m:e/></m:rad>`),
+      tpl('Lũy thừa', '▫^▫', `<m:sSup><m:sSupPr>${CTRL}</m:sSupPr><m:e/><m:sup/></m:sSup>`),
+      tpl('Chỉ số dưới', '▫_▫', `<m:sSub><m:sSubPr>${CTRL}</m:sSubPr><m:e/><m:sub/></m:sSub>`),
+      tpl(
+        'Chỉ số trên+dưới',
+        '▫_▫^▫',
+        `<m:sSubSup><m:sSubSupPr>${CTRL}</m:sSubSupPr><m:e/><m:sub/><m:sup/></m:sSubSup>`
+      ),
+      tpl(
+        'Chỉ số đặt trước',
+        '^▫_▫▫',
+        `<m:sPre><m:sPrePr>${CTRL}</m:sPrePr><m:sub/><m:sup/><m:e/></m:sPre>`
+      ),
+      tpl(
+        'Mũ của ngoặc',
+        '(▫)^▫',
+        `<m:sSup><m:sSupPr>${CTRL}</m:sSupPr><m:e>${DELIM('(', ')', '<m:e/>')}</m:e><m:sup/></m:sSup>`
+      ),
+    ],
+  },
+  {
+    name: 'Tổng & tích phân',
+    items: [
+      tpl('Tổng Σ có cận', '∑▫', NARY('∑', 'undOvr')),
+      tpl('Tổng Σ một cận', '∑▫', NARY('∑', 'undOvr', { supHide: true })),
+      tpl('Tích Π có cận', '∏▫', NARY('∏', 'undOvr')),
+      tpl('Tích phân có cận', '∫▫', NARY('∫', 'subSup')),
+      tpl('Tích phân không cận', '∫▫', NARY('∫', 'subSup', { subHide: true, supHide: true })),
+      tpl('Tích phân hai lớp', '∬▫', NARY('∬', 'subSup', { subHide: true, supHide: true })),
+      tpl('Tích phân đường', '∮▫', NARY('∮', 'subSup')),
+      tpl('Hợp ⋃ có cận', '⋃▫', NARY('⋃', 'undOvr')),
+      tpl('Giao ⋂ có cận', '⋂▫', NARY('⋂', 'undOvr')),
+    ],
+  },
+  {
+    name: 'Ngoặc & ma trận',
+    items: [
+      tpl('Ngoặc đơn', '(▫)', DELIM('(', ')', '<m:e/>')),
+      tpl('Ngoặc vuông', '[▫]', DELIM('[', ']', '<m:e/>')),
+      tpl('Ngoặc nhọn', '{▫}', DELIM('{', '}', '<m:e/>')),
+      tpl('Ngoặc góc', '⟨▫⟩', DELIM('⟨', '⟩', '<m:e/>')),
+      tpl('Trị tuyệt đối', '|▫|', DELIM('|', '|', '<m:e/>')),
+      tpl('Chuẩn vector', '‖▫‖', DELIM('‖', '‖', '<m:e/>')),
+      tpl(
+        'Tổ hợp',
+        '(▫ ▫)',
+        DELIM(
+          '(',
+          ')',
+          `<m:e><m:f><m:fPr><m:type m:val="noBar"/>${CTRL}</m:fPr><m:num/><m:den/></m:f></m:e>`
+        )
+      ),
+      tpl('Hệ 2 phương trình', '{▫;▫', DELIM('{', '', `<m:e>${EQARR(2)}</m:e>`)),
+      tpl('Hệ 3 phương trình', '{▫;▫;▫', DELIM('{', '', `<m:e>${EQARR(3)}</m:e>`)),
+      tpl('Ma trận 2x2', '[▫ ▫]', DELIM('[', ']', `<m:e>${MATRIX(2, 2)}</m:e>`)),
+      tpl('Ma trận 3x3', '[▫ ▫ ▫]', DELIM('[', ']', `<m:e>${MATRIX(3, 3)}</m:e>`)),
+      tpl('Ma trận 2x2 ngoặc tròn', '(▫ ▫)', DELIM('(', ')', `<m:e>${MATRIX(2, 2)}</m:e>`)),
+      tpl('Định thức 2x2', '|▫ ▫|', DELIM('|', '|', `<m:e>${MATRIX(2, 2)}</m:e>`)),
+      tpl('Vector cột 2', '(▫;▫)', DELIM('(', ')', `<m:e>${MATRIX(2, 1)}</m:e>`)),
+      tpl('Vector cột 3', '(▫;▫;▫)', DELIM('(', ')', `<m:e>${MATRIX(3, 1)}</m:e>`)),
+    ],
+  },
+  {
+    name: 'Hàm & dấu',
+    items: [
+      tpl(
+        'Giới hạn',
+        'lim ▫',
+        `<m:func><m:funcPr>${CTRL}</m:funcPr><m:fName><m:limLow><m:limLowPr>${CTRL}</m:limLowPr><m:e>${MTEXT('lim')}</m:e><m:lim/></m:limLow></m:fName><m:e/></m:func>`
+      ),
+      tpl(
+        'Max có điều kiện',
+        'max ▫',
+        `<m:func><m:funcPr>${CTRL}</m:funcPr><m:fName><m:limLow><m:limLowPr>${CTRL}</m:limLowPr><m:e>${MTEXT('max')}</m:e><m:lim/></m:limLow></m:fName><m:e/></m:func>`
+      ),
+      tpl('sin', 'sin ▫', FUNC('sin')),
+      tpl('cos', 'cos ▫', FUNC('cos')),
+      tpl('tan', 'tan ▫', FUNC('tan')),
+      tpl('ln', 'ln ▫', FUNC('ln')),
+      tpl(
+        'log cơ số',
+        'log_▫ ▫',
+        `<m:func><m:funcPr>${CTRL}</m:funcPr><m:fName><m:sSub><m:sSubPr>${CTRL}</m:sSubPr><m:e>${MTEXT('log')}</m:e><m:sub/></m:sSub></m:fName><m:e/></m:func>`
+      ),
+      tpl(
+        'Đạo hàm d▫/d▫',
+        'd▫⁄d▫',
+        `<m:f><m:fPr>${CTRL}</m:fPr><m:num>${MTEXT('d')}</m:num><m:den>${MTEXT('d')}</m:den></m:f>`
+      ),
+      tpl(
+        'Đạo hàm riêng ∂▫/∂▫',
+        '∂▫⁄∂▫',
+        `<m:f><m:fPr>${CTRL}</m:fPr><m:num>${MTEXT('∂')}</m:num><m:den>${MTEXT('∂')}</m:den></m:f>`
+      ),
+      tpl('Vector (mũi tên trên)', '→ trên ▫', ACC('⃗')),
+      tpl('Mũ (hat)', '^ trên ▫', ACC('̂')),
+      tpl('Chấm trên', '· trên ▫', ACC('̇')),
+      tpl('Gạch ngang trên', '‾▫', BAR('top')),
+      tpl('Gạch ngang dưới', '_▫', BAR('bot')),
+      tpl('Ngoặc nhọn trên', '⏞▫', GROUPCHR('⏞', 'top', 'bot')),
+      tpl('Ngoặc nhọn dưới', '⏟▫', GROUPCHR('⏟', 'bot', 'top')),
     ],
   },
 ];

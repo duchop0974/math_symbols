@@ -5,7 +5,11 @@ Task pane add-in cho Microsoft Word (Windows) giúp chèn nhanh ký hiệu toán
 ## Tính năng
 
 - 6 nhóm ký hiệu Unicode: Hy Lạp, Toán tử, Tập hợp, Logic, Mũi tên, Giải tích — click để chèn vào vị trí con trỏ.
-- 9 mẫu công thức OMML (phân số, căn bậc hai/bậc n, lũy thừa, chỉ số dưới, tích phân có cận, tổng Σ, giới hạn, ma trận 2x2) — chèn thành Equation Object thật của Word, edit tiếp được bằng Equation Editor.
+- 51 mẫu công thức OMML chia 4 nhóm — chèn thành Equation Object thật của Word với **ô trống điền được**, Tab để nhảy giữa các ô, lồng được vào nhau:
+  - *Phân số & mũ*: 4 kiểu phân số, căn bậc hai/bậc n, lũy thừa, chỉ số dưới/trên/trước, mũ của ngoặc.
+  - *Tổng & tích phân*: Σ, Π, ∫ (có cận/không cận/hai lớp/đường), ⋃, ⋂.
+  - *Ngoặc & ma trận*: 6 loại ngoặc, tổ hợp, hệ 2–3 phương trình, ma trận 2x2/3x3, định thức, vector cột.
+  - *Hàm & dấu*: lim, max, sin/cos/tan/ln, log cơ số, đạo hàm thường và riêng, vector, hat, chấm trên, gạch trên/dưới, ngoặc nhọn trên/dưới.
 - Tìm kiếm theo tên tiếng Việt hoặc tiếng Anh (`alpha`, `integral`, `phân số`...).
 - Đánh dấu yêu thích (★) — lưu trong localStorage của task pane.
 
