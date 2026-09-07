@@ -265,12 +265,12 @@
   function insertNextQuestion() {
     const no = Math.max(1, parseInt((nextNoBox() || {}).value, 10) || 1);
     const kind = (document.getElementById('quick-kind') || {}).value || 'mc';
-    const cols = parseInt((document.getElementById('q-cols') || {}).value, 10) || 2;
+    const cols = parseInt((document.getElementById('skel-cols') || {}).value, 10) || 2;
     const xml =
       kind === 'tl'
         ? essayBlock(no, 1, {
-            diem: (document.getElementById('q-diem') || {}).value || '2,0',
-            subs: parseInt((document.getElementById('q-subs') || {}).value, 10) || 0,
+            diem: (document.getElementById('skel-diem') || {}).value || '2,0',
+            subs: parseInt((document.getElementById('skel-subs') || {}).value, 10) || 0,
           })
         : questionBlock(kind, no, 1, cols);
     send(xml, true, `Đã chèn câu ${no}`);

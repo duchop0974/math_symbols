@@ -455,19 +455,19 @@ const PART_KIND = { 1: 'mc', 2: 'tf', 3: 'sa' };
 // Dựng cả bộ xương của đề trong MỘT gói: đầu đề, các phần, đủ số câu, dòng kết.
 // Chèn một lần nhanh hơn hẳn bấm lần lượt, và Word chỉ phải nhận một gói OOXML.
 function examSkeleton(f, style, cfg) {
+  let out = cfg.header === false ? '' : examHeaderBody(f, style);
+
   if (style === 'tl') {
-    return wrapBody(
-      examHeaderBody(f, 'tl') +
-        essayBody(1, cfg.essayCount, { diem: cfg.diem, subs: cfg.subs }) +
-        examFooterBody()
-    );
+    out += essayBody(1, cfg.essayCount, { diem: cfg.diem, subs: cfg.subs });
+  } else {
+    // Phần nào để 0 câu thì bỏ qua hẳn, không chèn cả tiêu đề phần.
+    [1, 2, 3].forEach((which) => {
+      const n = cfg.counts[which];
+      if (!n) return;
+      out += sectionPara(which, n, cfg.brief) + questionBody(PART_KIND[which], 1, n, cfg.cols);
+    });
   }
 
-  let out = examHeaderBody(f, 'tn');
-  [1, 2, 3].forEach((which) => {
-    const n = cfg.counts[which];
-    if (!n) return;
-    out += sectionPara(which, n, cfg.brief) + questionBody(PART_KIND[which], 1, n, cfg.cols);
-  });
+  if (cfg.footer) out += examFooterBody();
   return wrapBody(out);
 }

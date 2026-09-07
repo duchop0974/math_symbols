@@ -11,7 +11,7 @@ Trên cùng là **thanh nút nhanh** dính theo màn hình, luôn thấy dù đa
 - ô số câu + kiểu câu + nút **+ Chèn** — chèn câu tiếp theo rồi tự tăng số, đồng bộ với ô "Bắt đầu từ câu" của tab Đề thi;
 - hàng ký hiệu **vừa dùng và đánh dấu ★** — chèn lại công thức mà không phải rời tab đang làm.
 
-Nút **Dựng cả khung đề** chèn một lần ra đầu đề + ba tiêu đề phần + đủ số câu trống (mặc định 12 – 4 – 6 = 22 câu), hoặc với đề tự luận là đầu đề + n câu + dòng kết.
+Mục **Dựng cả khung đề** gom mọi tuỳ chọn về một chỗ và hiện **dòng tóm tắt cập nhật ngay theo từng ô** — *"Sẽ dựng: đầu đề + Phần I 12 câu + Phần II 4 câu + Phần III 6 câu + dòng kết đề — tổng 22 câu."* — nên biết trước sẽ ra gì rồi mới bấm **Dựng vào Word**. Chỉnh được: có kèm đầu đề không, số câu từng phần (để 0 là bỏ hẳn phần đó), cách xếp phương án, câu chữ tiêu đề phần, có kèm dòng kết không; với đề tự luận là số câu, điểm mỗi câu và số ý.
 
 - 6 nhóm ký hiệu Unicode: Hy Lạp, Toán tử, Tập hợp, Logic, Mũi tên, Giải tích — click để chèn vào vị trí con trỏ.
 - 65 mẫu công thức OMML chia 5 nhóm — chèn thành Equation Object thật của Word với **ô trống điền được**, Tab để nhảy giữa các ô, lồng được vào nhau:

@@ -288,6 +288,7 @@ function renderExamPanel(panel) {
     panel.querySelectorAll('[data-only]').forEach((el) => {
       el.classList.toggle('hidden', el.dataset.only !== style);
     });
+    skelSummary();
   }
 
   panel.appendChild(
@@ -296,41 +297,8 @@ function renderExamPanel(panel) {
       [fieldRow('Kiểu đề', styleSel)]
         .concat(headerRows)
         .concat([
-          h('div', { class: 'btn-row' }, [
-            button(
-              'Dựng cả khung đề',
-              () => {
-                const cfg =
-                  style === 'tl'
-                    ? {
-                        essayCount: Math.max(1, num('part-essay', 9)),
-                        diem: val('q-diem').trim() || '2,0',
-                        subs: num('q-subs', 0),
-                      }
-                    : {
-                        counts: {
-                          1: num('part-1', 12),
-                          2: num('part-2', 4),
-                          3: num('part-3', 6),
-                        },
-                        cols: num('q-cols', 2),
-                        brief: val('part-wording') === 'brief',
-                      };
-                Pane.insertOoxml(
-                  examSkeleton(readHeaderForm(), style, cfg),
-                  'Đã dựng cả khung đề'
-                );
-              },
-              true
-            ),
-            button('Chỉ đầu đề', () =>
-              Pane.insertOoxml(examHeader(readHeaderForm(), style), 'Đã chèn đầu đề thi')
-            ),
-          ]),
-          fieldRow('Số câu (đề tự luận)', input('part-essay', '9', { type: 'number', min: 1, max: 60 })),
-          note(
-            'Dựng cả khung đề chèn một lần ra đầu đề, các tiêu đề phần và đủ số câu trống — ' +
-              'số câu lấy theo mục "Tiêu đề phần" bên dưới. Sau đó chỉ việc gõ nội dung vào từng câu.'
+          button('Chèn đầu đề thi', () =>
+            Pane.insertOoxml(examHeader(readHeaderForm(), style), 'Đã chèn đầu đề thi')
           ),
         ]),
       true
@@ -341,9 +309,8 @@ function renderExamPanel(panel) {
   // "Bắt đầu từ câu" về 1 luôn cho khỏi phải sửa tay.
   const insertPart = (which) => {
     const count = Math.max(1, num(`part-${which}`, SECTION_COUNTS[which]));
-    const brief = val('part-wording') === 'brief';
     Pane.insertOoxml(
-      sectionHeading(which, count, brief),
+      sectionHeading(which, count, val('part-wording') === 'brief'),
       `Đã chèn tiêu đề Phần ${'I'.repeat(which)}`
     );
     const startBox = document.getElementById('q-start');
@@ -359,46 +326,121 @@ function renderExamPanel(panel) {
   );
   wordingSel.id = 'part-wording';
 
-  // Ô này chỉ có nghĩa với đề tự luận, gắn nhãn để applyStyle() ẩn khi cần.
-  panel.querySelector('#part-essay').closest('.field').dataset.only = 'tl';
-
-  const partSection = section('Tiêu đề phần', [
-    fieldRow('Câu chữ', wordingSel),
-    fieldRow('Số câu Phần I', input('part-1', '12', { type: 'number', min: 1, max: 99 })),
-    fieldRow('Số câu Phần II', input('part-2', '4', { type: 'number', min: 1, max: 99 })),
-    fieldRow('Số câu Phần III', input('part-3', '6', { type: 'number', min: 1, max: 99 })),
-    h('div', { class: 'btn-row' }, [
-      button('PHẦN I', () => insertPart(1)),
-      button('PHẦN II', () => insertPart(2)),
-      button('PHẦN III', () => insertPart(3)),
-    ]),
-    note(
-      'Câu chữ lấy theo đề tham khảo của Bộ GD&ĐT từ 2025 (Toán: 12 – 4 – 6 câu). ' +
-        'Mỗi phần đánh số lại từ câu 1, nên bấm tiêu đề phần sẽ tự đưa ô "Bắt đầu từ câu" về 1.'
-    ),
-  ]);
-  partSection.dataset.only = 'tn';
-  panel.appendChild(partSection);
-
-  const startRow = fieldRow('Bắt đầu từ câu', input('q-start', '1', { type: 'number', min: 1 }));
-  const countRow = fieldRow('Số câu chèn', input('q-count', '5', { type: 'number', min: 1, max: 100 }));
-  const colsSel = select(
+  const skelCols = select(
     [
       ['2', '2 cột'],
-      ['1', '1 cột (mỗi dòng một phương án)'],
-      ['4', '4 cột trên một dòng'],
+      ['1', '1 cột'],
+      ['4', '4 cột'],
     ],
     '2'
   );
-  colsSel.id = 'q-cols';
-  const colsRow = fieldRow('Xếp phương án', colsSel);
-  colsRow.dataset.only = 'tn';
+  skelCols.id = 'skel-cols';
 
-  const diemRow = fieldRow('Điểm mỗi câu', input('q-diem', '2,0', { placeholder: '2,0' }));
-  diemRow.dataset.only = 'tl';
-  const subsRow = fieldRow('Số ý (a, b, c...)', input('q-subs', '0', { type: 'number', min: 0, max: 5 }));
-  subsRow.dataset.only = 'tl';
+  const check = (id, checked) => {
+    const box = h('input', { id, type: 'checkbox' });
+    box.checked = checked;
+    return box;
+  };
 
+  // Mọi thứ quyết định khung đề nằm gọn ở đây, và tóm tắt cập nhật theo từng ô
+  // để thấy trước sẽ dựng ra cái gì rồi mới bấm.
+  const skelRows = {
+    header: fieldRow('Kèm đầu đề thi', check('skel-header', true)),
+    wording: fieldRow('Câu chữ tiêu đề phần', wordingSel),
+    p1: fieldRow('Phần I — trắc nghiệm', input('part-1', '12', { type: 'number', min: 0, max: 99 })),
+    p2: fieldRow('Phần II — đúng/sai', input('part-2', '4', { type: 'number', min: 0, max: 99 })),
+    p3: fieldRow('Phần III — trả lời ngắn', input('part-3', '6', { type: 'number', min: 0, max: 99 })),
+    cols: fieldRow('Xếp phương án', skelCols),
+    essay: fieldRow('Số câu tự luận', input('part-essay', '9', { type: 'number', min: 0, max: 60 })),
+    diem: fieldRow('Điểm mỗi câu', input('skel-diem', '2,0', { placeholder: '2,0' })),
+    subs: fieldRow('Số ý mỗi câu', input('skel-subs', '0', { type: 'number', min: 0, max: 5 })),
+    footer: fieldRow('Kèm dòng kết đề', check('skel-footer', true)),
+  };
+  ['p1', 'p2', 'p3', 'cols', 'wording'].forEach((k) => {
+    skelRows[k].dataset.only = 'tn';
+  });
+  ['essay', 'diem', 'subs'].forEach((k) => {
+    skelRows[k].dataset.only = 'tl';
+  });
+
+  function skelConfig() {
+    const header = (document.getElementById('skel-header') || {}).checked !== false;
+    const footer = !!(document.getElementById('skel-footer') || {}).checked;
+    if (style === 'tl') {
+      return {
+        header,
+        footer,
+        essayCount: Math.max(0, num('part-essay', 9)),
+        diem: val('skel-diem').trim() || '2,0',
+        subs: num('skel-subs', 0),
+      };
+    }
+    return {
+      header,
+      footer,
+      counts: { 1: num('part-1', 12), 2: num('part-2', 4), 3: num('part-3', 6) },
+      cols: num('skel-cols', 2),
+      brief: val('part-wording') === 'brief',
+    };
+  }
+
+  function skelSummary() {
+    const box = document.getElementById('skel-summary');
+    if (!box) return;
+    const cfg = skelConfig();
+    const bits = [];
+    if (cfg.header) bits.push('đầu đề');
+    if (style === 'tl') {
+      if (cfg.essayCount) bits.push(`${cfg.essayCount} câu tự luận (${cfg.diem} điểm${cfg.subs ? `, ${cfg.subs} ý` : ''})`);
+    } else {
+      const parts = [1, 2, 3].filter((w) => cfg.counts[w]);
+      parts.forEach((w) => bits.push(`Phần ${'I'.repeat(w)} ${cfg.counts[w]} câu`));
+    }
+    if (cfg.footer) bits.push('dòng kết đề');
+    const total =
+      style === 'tl' ? cfg.essayCount : [1, 2, 3].reduce((a, w) => a + cfg.counts[w], 0);
+    box.textContent = bits.length
+      ? `Sẽ dựng: ${bits.join(' + ')} — tổng ${total} câu.`
+      : 'Chưa chọn gì để dựng.';
+  }
+
+  const skelSection = section(
+    'Dựng cả khung đề',
+    Object.values(skelRows).concat([
+      h('p', { id: 'skel-summary', class: 'measure' }),
+      button(
+        'Dựng vào Word',
+        () => {
+          const cfg = skelConfig();
+          const total =
+            style === 'tl' ? cfg.essayCount : [1, 2, 3].reduce((a, w) => a + cfg.counts[w], 0);
+          if (!total && !cfg.header && !cfg.footer) {
+            Pane.toast('Chưa chọn phần nào để dựng.', true);
+            return;
+          }
+          Pane.insertOoxml(examSkeleton(readHeaderForm(), style, cfg), 'Đã dựng cả khung đề');
+        },
+        true
+      ),
+      h('div', { class: 'sub-head', text: 'Hoặc chèn riêng tiêu đề từng phần', 'data-only': 'tn' }),
+      h('div', { class: 'btn-row', 'data-only': 'tn' }, [
+        button('PHẦN I', () => insertPart(1)),
+        button('PHẦN II', () => insertPart(2)),
+        button('PHẦN III', () => insertPart(3)),
+      ]),
+      note(
+        'Câu chữ tiêu đề phần lấy theo đề tham khảo của Bộ GD&ĐT từ 2025 (Toán: 12 – 4 – 6 câu). ' +
+          'Mỗi phần đánh số lại từ câu 1. Để 0 câu thì phần đó bị bỏ qua hẳn.'
+      ),
+    ]),
+    true
+  );
+  skelSection.addEventListener('input', skelSummary);
+  skelSection.addEventListener('change', skelSummary);
+  panel.appendChild(skelSection);
+
+  const startRow = fieldRow('Bắt đầu từ câu', input('q-start', '1', { type: 'number', min: 1 }));
+  const countRow = fieldRow('Số câu chèn', input('q-count', '5', { type: 'number', min: 1, max: 100 }));
   const advance = (start, count) => {
     const startBox = document.getElementById('q-start');
     if (startBox) startBox.value = String(start + count);
@@ -410,13 +452,13 @@ function renderExamPanel(panel) {
 
   const insertQuestions = (kind, label) => {
     const { start, count } = range();
-    Pane.insertOoxml(questionBlock(kind, start, count, num('q-cols', 2)), `Đã chèn ${count} ${label}`);
+    Pane.insertOoxml(questionBlock(kind, start, count, num('skel-cols', 2)), `Đã chèn ${count} ${label}`);
     advance(start, count);
   };
 
   const insertEssay = () => {
     const { start, count } = range();
-    const opts = { diem: val('q-diem').trim() || '2,0', subs: num('q-subs', 0) };
+    const opts = { diem: val('skel-diem').trim() || '2,0', subs: num('skel-subs', 0) };
     Pane.insertOoxml(essayBlock(start, count, opts), `Đã chèn ${count} câu tự luận`);
     advance(start, count);
   };
@@ -447,7 +489,7 @@ function renderExamPanel(panel) {
   panel.appendChild(
     section(
       'Chèn câu hỏi',
-      [startRow, countRow, colsRow, diemRow, subsRow, essayButtons, mcButtons],
+      [startRow, countRow, essayButtons, mcButtons],
       true
     )
   );
