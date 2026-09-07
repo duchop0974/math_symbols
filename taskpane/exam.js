@@ -351,6 +351,34 @@ function answerKeyTable(entries, perRow) {
   return wrapBody(textPara('BẢNG ĐÁP ÁN', { jc: 'center', bold: true }) + tbl(widths, rows, true));
 }
 
+// Bảng đáp án tổng hợp: mỗi dòng một mã đề, mỗi cột một câu.
+// rows: [{ code, entries: [{ no, ans }] }]
+function keyMatrixTable(rows) {
+  const count = rows.reduce((m, r) => Math.max(m, r.entries.length), 0);
+  const labelW = 900;
+  const cellW = Math.max(320, Math.floor((PAGE.width - labelW) / Math.max(1, count)));
+  const widths = [labelW, ...new Array(count).fill(cellW)];
+
+  let out = tr(
+    tc(labelW, textPara('Mã đề', { jc: 'center', bold: true })) +
+      Array.from({ length: count }, (_, i) =>
+        tc(cellW, textPara(String(i + 1), { jc: 'center', bold: true }))
+      ).join('')
+  );
+  rows.forEach((r) => {
+    out += tr(
+      tc(labelW, textPara(String(r.code), { jc: 'center', bold: true })) +
+        Array.from({ length: count }, (_, i) =>
+          tc(cellW, textPara((r.entries[i] || {}).ans || '', { jc: 'center' }))
+        ).join('')
+    );
+  });
+
+  return wrapBody(
+    textPara('ĐÁP ÁN CÁC MÃ ĐỀ', { jc: 'center', bold: true }) + tbl(widths, out, true)
+  );
+}
+
 // ------------------------------------------------- bảng biến thiên / xét dấu
 
 const ARROW = { '+': '↗', '-': '↘' };

@@ -27,7 +27,7 @@ Nút **Dựng cả khung đề** chèn một lần ra đầu đề + ba tiêu đ
 
     Cả hai kiểu đều nhớ lại nội dung đã nhập cho lần mở sau, và ô "Bắt đầu từ câu" tự tăng sau mỗi lần chèn.
   - *Bảng BT*: dựng bảng biến thiên (3 dòng) hoặc bảng xét dấu (2 dòng) — nhập nghiệm, chọn dấu từng khoảng, xem trước ngay trong task pane rồi chèn ra thành bảng Word thật; mũi tên ↗ ↘ tự suy ra từ dấu đạo hàm.
-  - *Đáp án*: chèn bảng đáp án từ chuỗi `1A 2B 3C` hoặc `ABCD...` (cả đáp án đúng/sai kiểu `1 ĐSSĐ`), bảng đáp án trống, đánh số lại toàn bộ câu hỏi, trộn thứ tự câu hỏi và chuyển bảng đáp án cũ sang thứ tự mới.
+  - *Đáp án*: chèn bảng đáp án từ chuỗi `1A 2B 3C` hoặc `ABCD...` (cả đáp án đúng/sai kiểu `1 ĐSSĐ`), bảng đáp án trống, đánh số lại toàn bộ câu hỏi, và **trộn đề thành nhiều mã** (xem mục dưới).
 - Nếu đơn vị bắt buộc nộp đề gõ bằng **MathType**: soạn cả đề bằng add-in rồi chuyển một lần ở bước cuối — Word → tab MathType → **Convert Equations** → nguồn *Word 2007 and later (OMML) equations*, phạm vi *Whole document*, đích *MathType equations (OLE objects)*. Hướng dẫn này có sẵn trong tab Đề thi.
 - Tìm kiếm theo tên tiếng Việt hoặc tiếng Anh (`alpha`, `integral`, `phân số`...).
 - Đánh dấu yêu thích (★) và mẫu vừa dùng — hiện trên thanh nút nhanh, lưu trong localStorage của task pane.
@@ -48,6 +48,7 @@ taskpane/
   taskpane.js         # Logic render + chèn vào Word qua Office.js
   symbols.js          # Dữ liệu ký hiệu + mẫu OMML + hàm đóng gói Flat OPC
   exam.js             # Dựng OOXML cho đầu đề, câu hỏi, bảng biến thiên, bảng đáp án
+  shuffle.js          # Trộn đề nhiều mã: tách/ghép gói OPC, đảo câu và phương án
   tools.js            # Form của 3 tab công cụ soạn đề thi
 ```
 
@@ -94,14 +95,24 @@ Giao diện task pane nạp trực tiếp từ GitHub Pages, nên **hầu hết 
 - **Sửa `taskpane/taskpane.html`** (thêm file JS mới, đổi tiêu đề…): Word giữ bản HTML cũ trong cache. Đóng Word rồi xoá sạch bên trong `%LOCALAPPDATA%\Microsoft\Office\16.0\Wef`, mở lại Word. Các file `.js`/`.css` không bị, vì đã có tham số `?v=` tăng theo mỗi bản.
 - **Sửa `manifest.xml`** (tên add-in, nhãn nút ribbon…): phải phát hành bộ cài mới và chạy lại trên từng máy. `AppId` của bộ cài và `Id` của add-in giữ nguyên nên bản mới **nâng cấp đè** lên bản cũ, không tạo mục thứ hai trong Apps.
 
-## Lưu ý khi trộn đề
+## Trộn đề nhiều mã
 
-Chức năng **Trộn thứ tự câu hỏi** đọc tài liệu qua Office.js, nhận diện mọi đoạn bắt đầu bằng `Câu 1:` / `Câu 1.` / `Câu 1)`, rồi đảo thứ tự các khối đó **từ câu đầu tiên đến hết tài liệu** và đánh số lại từ 1.
+Tab **Đáp án → Trộn đề nhiều mã**: nhập danh sách mã đề (`101, 102, 103, 104`) và đáp án đề gốc, add-in đọc đề đang mở rồi **nối thêm từng mã đề vào cuối tài liệu**, mỗi mã bắt đầu ở một trang mới. Đề gốc được giữ nguyên.
 
-- Lưu tài liệu trước khi trộn — thao tác này ghi đè phần thân đề.
-- Để bảng đáp án ở file riêng, đừng để cuối đề, vì nó cũng nằm trong vùng bị trộn.
-- Sau khi trộn, task pane hiện bảng *câu mới ← câu gốc*; dán đáp án đề gốc vào ô "Chuyển đáp án theo thứ tự mới" để lấy đáp án tương ứng.
+Với mỗi mã đề:
 
+- thứ tự câu bị đảo **trong từng phần** — câu trắc nghiệm không bị trộn lẫn sang phần đúng/sai;
+- thứ tự **A/B/C/D trong từng câu** cũng bị đảo, nhãn được viết lại đúng vị trí mới, công thức trong phương án giữ nguyên;
+- mỗi phần đánh số lại từ câu 1, đúng cấu trúc đề Bộ;
+- dòng `Mã đề thi ...` ở đầu đề được thay bằng mã tương ứng.
+
+Nhập đáp án đề gốc thì add-in chèn thêm **bảng đáp án tổng hợp** — mỗi dòng một mã đề, mỗi cột một câu — đã tính lại theo cả thứ tự câu lẫn thứ tự phương án. Task pane cũng hiện bảng *câu mới ← câu gốc* của từng mã.
+
+Nhận diện dựa trên chữ đầu đoạn: `PHẦN I/II/III` cho ranh giới phần, `Câu 1.` / `Câu 1:` / `Câu 1)` cho đầu mỗi câu. Câu không có đúng 4 phương án (đúng/sai, trả lời ngắn, tự luận) chỉ bị đảo thứ tự, không đụng vào ruột.
+
+Hãy **lưu tài liệu trước khi trộn**.
+
+Về mặt kỹ thuật, `getOoxml()` trả về nguyên một gói Flat OPC nên không nối thẳng được; `shuffle.js` bóc ruột `<w:body>` của từng khối rồi ghép lại vào chính gói Word trả về, nhờ vậy `styles.xml` và các part khác được giữ nguyên.
 
 Gỡ cài đặt: **Settings → Apps → Trợ Lý Soạn Đề → Uninstall** (bộ cài tự xoá khoá registry đã ghi).
 

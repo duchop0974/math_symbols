@@ -676,17 +676,6 @@ function renderVariationPanel(panel) {
 
 // ------------------------------------------------ tab Đáp án & trộn đề
 
-let lastShuffleOrder = null; // order[viTriMoi] = viTriGoc
-
-function shuffled(length) {
-  const order = Array.from({ length }, (_, i) => i);
-  for (let i = order.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [order[i], order[j]] = [order[j], order[i]];
-  }
-  return order;
-}
-
 function wordAvailable() {
   if (typeof Word === 'undefined' || !Pane.inWord) {
     Pane.toast('Chức năng này chỉ chạy khi task pane mở trong Word.', true);
@@ -716,40 +705,6 @@ async function renumberQuestions(start) {
     });
     await ctx.sync();
     return jobs.length;
-  });
-}
-
-async function shuffleQuestions() {
-  return Word.run(async (ctx) => {
-    const body = ctx.document.body;
-    const paras = body.paragraphs;
-    paras.load('items/text');
-    await ctx.sync();
-
-    const starts = [];
-    paras.items.forEach((p, i) => {
-      if (QUESTION_RE.test(p.text)) starts.push(i);
-    });
-    if (starts.length < 2) throw new Error('Cần ít nhất 2 đoạn bắt đầu bằng "Câu 1:" để trộn.');
-
-    const last = paras.items.length - 1;
-    const packages = starts.map((from, k) => {
-      const to = k + 1 < starts.length ? starts[k + 1] - 1 : last;
-      const range = paras.items[from].getRange('Whole').expandTo(paras.items[to].getRange('Whole'));
-      return range.getOoxml();
-    });
-    // Toàn bộ vùng từ câu đầu tiên tới cuối tài liệu sẽ bị ghi đè bằng thứ tự mới.
-    const region = paras.items[starts[0]].getRange('Whole').expandTo(paras.items[last].getRange('Whole'));
-    await ctx.sync();
-
-    const order = shuffled(packages.length);
-    region.insertOoxml(packages[order[0]].value, 'Replace');
-    await ctx.sync();
-    for (let i = 1; i < order.length; i += 1) {
-      body.insertOoxml(packages[order[i]].value, 'End');
-      await ctx.sync(); // chèn tuần tự để giữ đúng thứ tự
-    }
-    return order;
   });
 }
 
@@ -786,76 +741,92 @@ function renderAnswerPanel(panel) {
     ])
   );
 
-  panel.appendChild(heading('Đánh số & trộn đề'));
+  panel.appendChild(heading('Đánh số câu'));
   panel.appendChild(fieldRow('Đánh số lại từ', input('renum-start', '1', { type: 'number', min: 1 })));
   panel.appendChild(
     button('Đánh số lại các câu', async () => {
       if (!wordAvailable()) return;
       try {
         const n = await renumberQuestions(Math.max(1, num('renum-start', 1)));
-        Pane.toast(n ? `Đã đánh số lại ${n} câu.` : 'Không tìm thấy đoạn nào bắt đầu bằng "Câu n:".', !n);
+        Pane.toast(n ? `Đã đánh số lại ${n} câu.` : 'Không thấy đoạn nào bắt đầu bằng "Câu n.".', !n);
       } catch (e) {
         Pane.toast(`Lỗi: ${e.message}`, true);
       }
     })
   );
 
+  panel.appendChild(heading('Trộn đề nhiều mã'));
+  panel.appendChild(fieldRow('Mã đề', input('mix-codes', '101, 102, 103, 104', { placeholder: '101, 102' })));
   panel.appendChild(
-    note(
-      'Trộn đề đảo thứ tự các câu tính từ "Câu 1" đến hết tài liệu, rồi đánh số lại. ' +
-        'Hãy lưu tài liệu trước khi trộn, và giữ bảng đáp án ở một file riêng.'
+    fieldRow(
+      'Đáp án đề gốc',
+      h('textarea', { id: 'mix-key', rows: '2', placeholder: '1A 2B 3C ... hoặc ABCD...' })
     )
   );
   panel.appendChild(
-    button('Trộn thứ tự câu hỏi', async () => {
-      if (!wordAvailable()) return;
-      try {
-        const order = await shuffleQuestions();
-        lastShuffleOrder = order;
-        await renumberQuestions(1);
-        renderMapping(order);
-        Pane.toast(`Đã trộn ${order.length} câu.`);
-      } catch (e) {
-        Pane.toast(`Lỗi trộn đề: ${e.message}`, true);
-      }
-    })
+    note(
+      'Đọc đề đang mở, giữ nguyên đề gốc và nối thêm từng mã đề vào cuối tài liệu, mỗi mã ' +
+        'một trang mới. Trong mỗi phần, thứ tự câu bị đảo và thứ tự A/B/C/D trong từng câu ' +
+        'cũng đảo; câu vẫn nằm đúng phần của nó. Nhập đáp án đề gốc thì được luôn bảng đáp án ' +
+        'các mã. Hãy lưu tài liệu trước khi trộn.'
+    )
+  );
+  panel.appendChild(
+    button(
+      'Trộn thành các mã đề',
+      async () => {
+        if (!wordAvailable()) return;
+        const codes = val('mix-codes')
+          .split(/[,;\s]+/)
+          .map((c) => c.trim())
+          .filter(Boolean);
+        if (!codes.length) {
+          Pane.toast('Chưa nhập mã đề nào.', true);
+          return;
+        }
+        try {
+          const plans = await makeVariants({ codes });
+          lastPlans = plans;
+          renderPlans(plans);
+          const entries = parseAnswerKey(val('mix-key'), 1);
+          if (entries.length) await appendKeyMatrix(plans, entries);
+          Pane.toast(`Đã tạo ${plans.length} mã đề.`);
+        } catch (e) {
+          Pane.toast(`Lỗi trộn đề: ${e.message}`, true);
+        }
+      },
+      true
+    )
   );
   panel.appendChild(h('div', { id: 'shuffle-map' }));
-
-  panel.appendChild(heading('Chuyển đáp án theo thứ tự mới'));
-  panel.appendChild(
-    fieldRow('Đáp án đề gốc', h('textarea', { id: 'remap-key', rows: '2', placeholder: 'ABCD... hoặc 1A 2B ...' }))
-  );
-  panel.appendChild(
-    button('Chuyển đáp án', () => {
-      if (!lastShuffleOrder) {
-        Pane.toast('Chưa trộn đề trong phiên này nên chưa có thứ tự để chuyển.', true);
-        return;
-      }
-      const entries = parseAnswerKey(val('remap-key'), 1);
-      if (entries.length < lastShuffleOrder.length) {
-        Pane.toast(`Đáp án gốc chỉ có ${entries.length} câu, cần ${lastShuffleOrder.length}.`, true);
-        return;
-      }
-      const remapped = lastShuffleOrder.map((oldIdx, i) => ({ no: i + 1, ans: entries[oldIdx].ans }));
-      const out = document.getElementById('remap-out');
-      out.textContent = remapped.map((e) => `${e.no}${e.ans}`).join('  ');
-      const box = document.getElementById('ans-key');
-      if (box) box.value = out.textContent;
-      Pane.toast('Đã chuyển đáp án và điền vào ô Bảng đáp án ở trên.');
-    })
-  );
-  panel.appendChild(h('pre', { id: 'remap-out', class: 'out' }));
 }
 
-function renderMapping(order) {
+let lastPlans = null;
+
+// Đáp án chỉ tính cho phần đầu tiên có đủ 4 phương án — tức phần trắc nghiệm.
+function keyRowsFor(plans, entries) {
+  return plans.map(({ code, plan }) => {
+    const part = plan.find((p) => p.perms.some(Boolean)) || plan[0];
+    return { code, entries: remapKey(entries, part.order, part.perms) };
+  });
+}
+
+async function appendKeyMatrix(plans, entries) {
+  Pane.insertOoxml(keyMatrixTable(keyRowsFor(plans, entries)), 'Đã chèn bảng đáp án các mã đề');
+}
+
+function renderPlans(plans) {
   const box = document.getElementById('shuffle-map');
   if (!box) return;
   box.innerHTML = '';
-  box.appendChild(h('div', { class: 'sub-head', text: 'Câu mới ← câu gốc' }));
-  box.appendChild(
-    h('pre', { class: 'out', text: order.map((oldIdx, i) => `${i + 1}←${oldIdx + 1}`).join('  ') })
-  );
+  box.appendChild(h('div', { class: 'sub-head', text: 'Câu mới ← câu gốc (theo từng phần)' }));
+  plans.forEach(({ code, plan }) => {
+    const lines = plan
+      .map((p, i) => `Phần ${i + 1}: ${p.order.map((o, n) => `${n + 1}←${o + 1}`).join(' ')}`)
+      .join('\n');
+    box.appendChild(h('div', { class: 'sub-head', text: `Mã đề ${code}` }));
+    box.appendChild(h('pre', { class: 'out', text: lines }));
+  });
 }
 
 // ---------------------------------------------------------------- đăng ký tab
