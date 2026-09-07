@@ -264,6 +264,43 @@ function renderExamPanel(panel) {
     return box;
   };
 
+  // ---------------------------------------------------------------- định dạng
+
+  const fontSel = select(
+    FONT_CHOICES.map((f) => [f, f]),
+    FONT.name,
+    saveFontSetting
+  );
+  fontSel.id = 'font-name';
+  const sizeBox = input('font-size', String(FONT.size), { type: 'number', min: 8, max: 20 });
+  sizeBox.addEventListener('input', saveFontSetting);
+  const marginSel = select(MARGIN_PRESETS, '30-20', savePageSetting);
+  marginSel.id = 'page-margin';
+  const lineSel = select(LINE_PRESETS, '1', savePageSetting);
+  lineSel.id = 'page-line';
+  try {
+    const savedPage = JSON.parse(localStorage.getItem(PAGE_KEY));
+    if (savedPage) {
+      marginSel.value = savedPage.margin;
+      lineSel.value = savedPage.line;
+    }
+  } catch {
+    // giữ mặc định
+  }
+
+  const formatRows = [
+    fieldRow('Phông', fontSel),
+    fieldRow('Cỡ chữ (pt)', sizeBox),
+    fieldRow('Lề trang', marginSel),
+    fieldRow('Giãn dòng', lineSel),
+    h('p', { id: 'page-width', class: 'measure' }),
+    note(
+      'Lề trang ở đây chỉ để tính bề rộng bảng cho khớp cột chữ — add-in không đổi được lề ' +
+        'của tài liệu, thầy/cô đặt trong Word: Layout → Margins → Custom Margins. Phông áp cho ' +
+        'mọi thứ add-in chèn ra ở cả ba tab; công thức toán vẫn dùng Cambria Math.'
+    ),
+  ];
+
   // ------------------------------------------------------------- đầu đề thi
 
   // Mỗi ô là một dòng của đầu đề; để trống thì dòng đó không xuất hiện, nên cùng
@@ -390,6 +427,9 @@ function renderExamPanel(panel) {
       continuous: !!(document.getElementById('skel-continuous') || {}).checked,
       brief: briefOn(),
       titles: titlesOn(),
+      grading: (document.getElementById('skel-grading') || {}).checked
+        ? { rows: Math.max(1, num('skel-grading-rows', 10)), sub: true }
+        : null,
       parts,
     };
   }
@@ -405,6 +445,7 @@ function renderExamPanel(panel) {
       bits.push(`Phần ${ROMAN[i] || i + 1} ${p.count} câu ${KIND_SHORT[p.kind] || p.kind}`);
     });
     if (cfg.footer) bits.push('dòng kết đề');
+    if (cfg.grading) bits.push(`bảng hướng dẫn chấm ${cfg.grading.rows} dòng`);
     const total = parts.reduce((a, p) => a + (p.count || 0), 0);
     box.textContent = bits.length
       ? `Sẽ dựng: ${bits.join(' + ')} — tổng ${total} câu, đánh số ${
@@ -416,7 +457,11 @@ function renderExamPanel(panel) {
   // Mục chính, đứng đầu: mọi thứ để ra một đề hoàn chỉnh nằm gọn trong đây.
   const skelSection = section(
     'Dựng cả khung đề',
-    headerRows.concat([
+    [h('div', { class: 'sub-head', text: 'Định dạng' })]
+      .concat(formatRows)
+      .concat([h('div', { class: 'sub-head', text: 'Đầu đề thi' })])
+      .concat(headerRows)
+      .concat([
       h('div', { class: 'sub-head', text: 'Các phần của đề' }),
       partsBox,
       h('div', { class: 'btn-row' }, [
@@ -437,6 +482,8 @@ function renderExamPanel(panel) {
       fieldRow('Đánh số liên tục cả đề', check('skel-continuous', false)),
       fieldRow('Có tiêu đề phần', check('skel-titles', true)),
       fieldRow('Tiêu đề phần ngắn gọn', check('skel-brief', false)),
+      fieldRow('Kèm bảng hướng dẫn chấm', check('skel-grading', false)),
+      fieldRow('Số dòng bảng chấm', input('skel-grading-rows', '10', { type: 'number', min: 1, max: 60 })),
       h('p', { id: 'skel-summary', class: 'measure' }),
       button(
         'Dựng vào Word',
@@ -553,49 +600,6 @@ function renderExamPanel(panel) {
         ),
       ]),
     ])
-  );
-
-  // --------------------------------------- thiết lập đặt một lần, ít phải đụng
-
-  const fontSel = select(
-    FONT_CHOICES.map((f) => [f, f]),
-    FONT.name,
-    saveFontSetting
-  );
-  fontSel.id = 'font-name';
-  const sizeBox = input('font-size', String(FONT.size), { type: 'number', min: 8, max: 20 });
-  sizeBox.addEventListener('input', saveFontSetting);
-  const marginSel = select(MARGIN_PRESETS, '30-20', savePageSetting);
-  marginSel.id = 'page-margin';
-  const lineSel = select(LINE_PRESETS, '1', savePageSetting);
-  lineSel.id = 'page-line';
-  try {
-    const savedPage = JSON.parse(localStorage.getItem(PAGE_KEY));
-    if (savedPage) {
-      marginSel.value = savedPage.margin;
-      lineSel.value = savedPage.line;
-    }
-  } catch {
-    // giữ mặc định
-  }
-
-  panel.appendChild(
-    section(
-      'Định dạng chuẩn',
-      [
-        fieldRow('Phông', fontSel),
-        fieldRow('Cỡ chữ (pt)', sizeBox),
-        fieldRow('Lề trang', marginSel),
-        fieldRow('Giãn dòng', lineSel),
-        h('p', { id: 'page-width', class: 'measure' }),
-        note(
-          'Áp cho mọi thứ add-in chèn ra ở cả ba tab. Lề trang ở đây chỉ để tính bề rộng ' +
-            'bảng cho khớp cột chữ — add-in không đổi được lề của tài liệu, thầy/cô đặt trong ' +
-            'Word: Layout → Margins → Custom Margins. Công thức toán vẫn dùng Cambria Math.'
-        ),
-      ],
-      false
-    )
   );
 
   panel.appendChild(

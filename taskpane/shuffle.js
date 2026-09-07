@@ -140,15 +140,12 @@ const renumberBlock = (bodyXml, no) =>
 const setMaDe = (bodyXml, code) =>
   replaceFirstText(bodyXml, /Mã đề/, (t) => t.replace(/(Mã đề(?:\s*thi)?\s*:?\s*).*/, `$1${code}`));
 
-// Ngắt trang trước mỗi mã đề để in ra là dùng được ngay.
-const PAGE_BREAK = '<w:p><w:r><w:br w:type="page"/></w:r></w:p>';
-
 // ----------------------------------------------------- dựng một mã đề từ gốc
 
 // source: { headerBody, parts: [{ headingBody, questions: [body...] }] }
 // Trả về ruột body của mã đề và kế hoạch trộn để tính lại đáp án.
 function buildVariantBody(source, code) {
-  let out = PAGE_BREAK + (code ? setMaDe(source.headerBody, code) : source.headerBody);
+  let out = pageBreak() + (code ? setMaDe(source.headerBody, code) : source.headerBody);
   const plan = [];
 
   source.parts.forEach((part) => {

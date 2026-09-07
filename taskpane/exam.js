@@ -105,6 +105,11 @@ function tr(cellsXml, height) {
   return `<w:tr>${props}${cellsXml}</w:tr>`;
 }
 
+// Ngắt trang — dùng cho bảng hướng dẫn chấm và cho từng mã đề khi trộn đề.
+// Là hàm chứ không phải hằng, vì phông có thể đổi sau khi script đã nạp; đoạn
+// ngắt trang cũng phải mang phông như mọi đoạn khác.
+const pageBreak = () => para(`<w:r><w:rPr>${fontProps()}</w:rPr><w:br w:type="page"/></w:r>`);
+
 // Word đòi phải có một đoạn văn ngay sau bảng, nếu không tài liệu sẽ hỏng.
 function tbl(widths, rowsXml, bordered) {
   const sides = {};
@@ -272,7 +277,7 @@ function essayBody(start, count, opts) {
 
 // Bảng hướng dẫn chấm (Câu | Ý | Nội dung | Điểm) và bảng cấu trúc đề
 // (Câu | Nội dung | Điểm) — hai bảng mọi đề HSG đều phải kèm.
-function gradingTable(rowCount, withSubColumn) {
+function gradingBody(rowCount, withSubColumn) {
   const heads = withSubColumn ? ['Câu', 'Ý', 'Nội dung', 'Điểm'] : ['Câu', 'Nội dung', 'Điểm'];
   const narrow = 700;
   const points = 1100;
@@ -462,5 +467,9 @@ function examSkeleton(f, cfg) {
   });
 
   if (cfg.footer) out += examFooterBody();
+  // Hướng dẫn chấm luôn sang trang mới để tách hẳn khỏi đề.
+  if (cfg.grading) {
+    out += pageBreak() + gradingBody(cfg.grading.rows, cfg.grading.sub);
+  }
   return wrapBody(out);
 }

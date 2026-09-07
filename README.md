@@ -8,18 +8,21 @@ Task pane mở ra ở tab **Đề thi**. Bốn tab trên một hàng: *Đề thi
 
 Trên cùng là **thanh nút nhanh** dính theo màn hình, luôn thấy dù đang ở mục nào:
 
-- ô số câu + kiểu câu + nút **+ Chèn** — chèn câu tiếp theo rồi tự tăng số, đồng bộ với ô "Bắt đầu từ câu" của tab Đề thi;
+- ô số câu + dạng câu + nút **+ Chèn** — chèn câu tiếp theo rồi tự tăng số, dùng chung ô "Bắt đầu từ câu" với tab Đề thi;
 - hàng ký hiệu **vừa dùng và đánh dấu ★** — chèn lại công thức mà không phải rời tab đang làm.
 
-Tab **Đề thi** xếp theo việc chính trước, việc lẻ sau:
+### Tab Đề thi
 
 1. **Dựng cả khung đề** (mở sẵn) — mọi thứ để ra một đề hoàn chỉnh trong một lần bấm.
 2. **Chèn từng khối** — đầu đề, dòng kết, thêm câu lẻ khi đề đã dựng xong.
-3. **Bảng hướng dẫn chấm**.
-4. **Định dạng chuẩn** — phông, cỡ chữ, lề trang, giãn dòng; đặt một lần rồi thôi.
-5. **Nếu đề phải nộp bằng MathType**.
+3. **Bảng hướng dẫn chấm** — chèn riêng, ngoài tuỳ chọn kèm sẵn ở mục 1.
+4. **Nếu đề phải nộp bằng MathType**.
 
-Mục **Dựng cả khung đề** chứa mọi thứ để ra một đề hoàn chỉnh. **Không phải chọn "kiểu đề"** — đầu đề ghép từ các dòng rời, ô nào để trống thì dòng đó không xuất hiện, nên một biểu mẫu ra được mọi loại đề:
+Mục **Dựng cả khung đề** chia bốn nhóm:
+
+**Định dạng** — phông (mặc định Times New Roman 12), cỡ chữ, lề trang và giãn dòng theo Nghị định 30/2020/NĐ-CP (A4, lề trái 30–35mm, phải 15–20mm, trên/dưới 20–25mm). Lề trang dùng để tính bề rộng bảng cho khớp cột chữ — add-in không đổi được lề của tài liệu, phải đặt trong Word.
+
+**Đầu đề thi** — **không phải chọn "kiểu đề"**: đầu đề ghép từ các dòng rời, ô nào để trống thì dòng đó không xuất hiện, nên một biểu mẫu ra được mọi loại đề.
 
 | Điền | Kết quả |
 |---|---|
@@ -28,9 +31,30 @@ Mục **Dựng cả khung đề** chứa mọi thứ để ra một đề hoàn 
 | Mã đề | dòng `Mã đề thi 101`, bỏ trống thì không có |
 | Dòng họ tên & SBD | bật/tắt |
 
-Ví dụ cùng một biểu mẫu: điền `BỘ GIÁO DỤC VÀ ĐÀO TẠO` + mã đề ra đầu đề thi tốt nghiệp THPT; đổi sang `PHÒNG GD&ĐT ...`, thêm lớp và năm học, bỏ mã đề, tắt dòng họ tên, đổi nhãn môn thành `MÔN` là ra đầu đề học sinh giỏi cấp huyện; xoá gần hết chỉ để trường và thời gian là ra đề kiểm tra 15 phút.
+Cùng một biểu mẫu: điền `BỘ GIÁO DỤC VÀ ĐÀO TẠO` + mã đề ra đầu đề thi tốt nghiệp THPT; đổi sang `PHÒNG GD&ĐT ...`, thêm lớp và năm học, bỏ mã đề, tắt dòng họ tên, đổi nhãn môn thành `MÔN` là ra đầu đề học sinh giỏi cấp huyện; xoá gần hết chỉ để trường và thời gian là ra đề kiểm tra 15 phút.
 
-Bên dưới là danh sách phần tự thêm/bớt — không cố định ba phần:
+**Các phần của đề** — danh sách tự thêm/bớt, không cố định ba phần.
+
+| | |
+|---|---|
+| Số phần | thêm/bớt tuỳ ý, số La Mã tự cập nhật |
+| Mỗi phần | tự chọn dạng câu (trắc nghiệm A–D / đúng-sai / trả lời ngắn / tự luận), số câu, số cột phương án hoặc điểm và số ý |
+| Tiêu đề phần | để trống thì tự sinh theo câu chữ đề Bộ GD&ĐT từ 2025, gõ vào để thay bằng chữ của mình |
+| Nút ⤓ | chèn riêng một phần |
+
+**Tuỳ chọn** — kèm đầu đề, kèm dòng kết `…Hết…`, đánh số lại từ 1 mỗi phần (chuẩn đề Bộ) hay liên tục cả đề, có tiêu đề phần hay không, câu chữ tiêu đề đầy đủ hay ngắn gọn, và kèm bảng hướng dẫn chấm ở cuối (sang trang mới, đặt được số dòng).
+
+Cuối mục là **dòng tóm tắt cập nhật ngay theo từng ô** — *"Sẽ dựng: đầu đề + Phần I 12 câu trắc nghiệm + Phần II 4 câu đúng/sai + Phần III 6 câu trả lời ngắn + dòng kết đề — tổng 22 câu, đánh số lại từ 1 mỗi phần."* — nên biết trước sẽ ra gì rồi mới bấm **Dựng vào Word**. Toàn bộ cấu hình được nhớ giữa các lần mở.
+
+### Tab Bảng BT
+
+Dựng bảng biến thiên (3 dòng) hoặc bảng xét dấu (2 dòng): nhập nghiệm, chọn dấu từng khoảng, xem trước ngay trong task pane rồi chèn ra thành bảng Word thật; mũi tên ↗ ↘ tự suy ra từ dấu đạo hàm.
+
+### Tab Đáp án
+
+Chèn bảng đáp án từ chuỗi `1A 2B 3C` hoặc `ABCD...` (cả đáp án đúng/sai kiểu `1 ĐSSĐ`), bảng đáp án trống, đánh số lại toàn bộ câu hỏi, và **trộn đề thành nhiều mã** (xem mục riêng bên dưới).
+
+### Tab Ký hiệu
 
 - 6 nhóm ký hiệu Unicode: Hy Lạp, Toán tử, Tập hợp, Logic, Mũi tên, Giải tích — click để chèn vào vị trí con trỏ.
 - 65 mẫu công thức OMML chia 5 nhóm — chèn thành Equation Object thật của Word với **ô trống điền được**, Tab để nhảy giữa các ô, lồng được vào nhau:
@@ -39,17 +63,12 @@ Bên dưới là danh sách phần tự thêm/bớt — không cố định ba p
   - *Ngoặc & ma trận*: 6 loại ngoặc, tổ hợp, hệ 2–3 phương trình, ma trận 2x2/3x3, định thức, vector cột.
   - *Hàm & dấu*: lim, max, sin/cos/tan/ln, log cơ số, đạo hàm thường và riêng, vector, hat, chấm trên, gạch trên/dưới, ngoặc nhọn trên/dưới.
   - *Hàm số*: f(▫), g(▫), u(▫), f′(▫), f″(▫), y = f(▫), hàm hợp f(g(▫)), hàm ngược f⁻¹(▫), nguyên hàm ∫f(x)dx, tích phân có cận, F(x) + C, vi phân dx/dt (chữ d đứng đúng chuẩn), tập xác định D = ℝ∖{▫}.
-- **Ba tab công cụ soạn đề thi**:
-  - *Đề thi*: mục **Định dạng chuẩn** đặt phông (mặc định Times New Roman 12), cỡ chữ, **lề trang** và **giãn dòng** theo Nghị định 30/2020/NĐ-CP (A4, lề trái 30–35mm, phải 15–20mm, trên/dưới 20–25mm). Lề trang dùng để tính bề rộng bảng cho khớp cột chữ — add-in không đổi được lề của tài liệu. Sau đó chọn **kiểu đề**:
-    - *Tự luận / học sinh giỏi*: đầu đề Phòng GD&ĐT + ĐỀ CHÍNH THỨC / kỳ thi / lớp + năm học / MÔN / thời gian "(không kể thời gian giao đề)" / số trang; câu dạng `Câu 1 (4,0 điểm).` kèm các ý a) b) c); dòng kết `…Hết…` với lời dặn và chỗ ghi họ tên; bảng hướng dẫn chấm `Câu | Ý | Nội dung | Điểm` và bảng cấu trúc đề `Câu | Nội dung | Điểm`.
-    - *Trắc nghiệm*: đầu đề theo mẫu đề Bộ GD&ĐT (`Môn thi: TOÁN`, `Thời gian làm bài: 90 phút, không kể thời gian phát đề`, `Mã đề thi 101`, `(Đề thi có 04 trang)`, họ tên và số báo danh trên hai dòng); tiêu đề Phần I/II/III lấy đúng câu chữ đề tham khảo từ 2025, chọn được bản đầy đủ hoặc bản ngắn, số câu đặt được (mặc định Toán 12 – 4 – 6) — mỗi phần đánh số lại từ câu 1 nên bấm tiêu đề phần sẽ đưa ô "Bắt đầu từ câu" về 1; chèn hàng loạt câu trắc nghiệm A–D (1/2/4 cột), câu đúng/sai a–d, câu trả lời ngắn.
-
-    Cả hai kiểu đều nhớ lại nội dung đã nhập cho lần mở sau, và ô "Bắt đầu từ câu" tự tăng sau mỗi lần chèn.
-  - *Bảng BT*: dựng bảng biến thiên (3 dòng) hoặc bảng xét dấu (2 dòng) — nhập nghiệm, chọn dấu từng khoảng, xem trước ngay trong task pane rồi chèn ra thành bảng Word thật; mũi tên ↗ ↘ tự suy ra từ dấu đạo hàm.
-  - *Đáp án*: chèn bảng đáp án từ chuỗi `1A 2B 3C` hoặc `ABCD...` (cả đáp án đúng/sai kiểu `1 ĐSSĐ`), bảng đáp án trống, đánh số lại toàn bộ câu hỏi, và **trộn đề thành nhiều mã** (xem mục dưới).
-- Nếu đơn vị bắt buộc nộp đề gõ bằng **MathType**: soạn cả đề bằng add-in rồi chuyển một lần ở bước cuối — Word → tab MathType → **Convert Equations** → nguồn *Word 2007 and later (OMML) equations*, phạm vi *Whole document*, đích *MathType equations (OLE objects)*. Hướng dẫn này có sẵn trong tab Đề thi.
-- Tìm kiếm theo tên tiếng Việt hoặc tiếng Anh (`alpha`, `integral`, `phân số`...).
+- Tìm kiếm theo tên tiếng Việt, tiếng Anh, hoặc gõ thẳng ký hiệu (`alpha`, `integral`, `phân số`, `|`, `∫`).
 - Đánh dấu yêu thích (★) và mẫu vừa dùng — hiện trên thanh nút nhanh, lưu trong localStorage của task pane.
+
+### MathType
+
+Nếu đơn vị bắt buộc nộp đề gõ bằng **MathType**: soạn cả đề bằng add-in rồi chuyển một lần ở bước cuối — Word → tab MathType → **Convert Equations** → nguồn *Word 2007 and later (OMML) equations*, phạm vi *Whole document*, đích *MathType equations (OLE objects)*. Hướng dẫn này có sẵn trong tab Đề thi.
 
 ## Cấu trúc
 
