@@ -6,6 +6,8 @@ Task pane add-in cho Microsoft Word (Windows) giúp giáo viên **soạn đề t
 
 Ba tab theo ba giai đoạn làm việc: **Tạo đề** → **Chèn** → **Hoàn thiện**.
 
+Mọi ô và nút đều có **chỉ dẫn hiện khi trỏ chuột vào** — giải thích ô đó sinh ra dòng nào trên đề, để trống thì sao, và nút đó chèn cái gì vào đâu.
+
 Mỗi phạm vi chỉ có đúng một đường chèn, không chồng lấn:
 
 | Chèn gì | Ở đâu |

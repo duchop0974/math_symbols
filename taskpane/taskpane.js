@@ -167,6 +167,8 @@
     search.type = 'text';
     search.className = 'sym-search';
     search.placeholder = 'Tìm ký hiệu: alpha, phân số, nguyên hàm, | , ∫ ...';
+    search.title =
+      'Tìm theo tên tiếng Việt, tiếng Anh, hoặc gõ thẳng ký hiệu. Để trống để xem theo nhóm.';
     search.value = symbolQuery;
 
     const picker = document.createElement('select');
@@ -178,6 +180,7 @@
       picker.appendChild(opt);
     });
     picker.value = activeGroup;
+    picker.title = 'Chọn nhóm ký hiệu để xem.';
 
     const listBox = document.createElement('div');
     const hint = document.createElement('p');
@@ -313,17 +316,22 @@
     bar.innerHTML =
       '<div class="quick-row">' +
       '<span class="quick-label">Câu</span>' +
-      '<input id="quick-no" type="number" min="1" value="1" />' +
-      '<select id="quick-kind"></select>' +
-      '<select id="quick-cols">' +
+      '<input id="quick-no" type="number" min="1" value="1" ' +
+      'title="Số của câu sắp chèn. Tự tăng sau mỗi lần bấm + Chèn." />' +
+      '<select id="quick-kind" title="Dạng câu sắp chèn."></select>' +
+      '<select id="quick-cols" title="Xếp 4 phương án A, B, C, D thành mấy cột.">' +
       '<option value="2">2 cột</option><option value="1">1 cột</option><option value="4">4 cột</option>' +
       '</select>' +
       '<span id="quick-tl" class="quick-tl hidden">' +
-      '<input id="quick-diem" type="text" value="2,0" title="Điểm mỗi câu" />' +
-      '<input id="quick-subs" type="number" min="0" max="5" value="0" title="Số ý" />' +
+      '<input id="quick-diem" type="text" value="2,0" ' +
+      'title="Điểm ghi trong ngoặc, vd Câu 1 (2,0 điểm)." />' +
+      '<input id="quick-subs" type="number" min="0" max="5" value="0" ' +
+      'title="Số ý a), b), c) của câu. Để 0 thì câu không chia ý." />' +
       '</span>' +
-      '<button id="quick-add" class="act primary">+ Chèn</button>' +
-      '</div><div id="quick-syms" class="quick-syms"></div>';
+      '<button id="quick-add" class="act primary" ' +
+      'title="Chèn một câu vào vị trí con trỏ rồi tăng số câu lên 1.">+ Chèn</button>' +
+      '</div><div id="quick-syms" class="quick-syms" ' +
+      'title="Ký hiệu vừa dùng và đánh dấu ★ — bấm để chèn lại."></div>';
 
     const kindSel = bar.querySelector('#quick-kind');
     QUICK_KINDS.forEach(([value, label]) => {

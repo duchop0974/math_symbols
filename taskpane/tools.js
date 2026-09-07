@@ -162,6 +162,87 @@ const num = (id, fallback) => {
   return Number.isFinite(n) ? n : fallback;
 };
 
+// Chỉ dẫn hiện khi trỏ chuột. Tra theo nhãn ô hoặc chữ trên nút nên không phải
+// sửa từng chỗ gọi, và nhãn nào đổi mà quên chỉ dẫn thì chỉ mất tooltip.
+const HINTS = {
+  // --- định dạng
+  'Phông': 'Phông cho mọi thứ add-in chèn ra. Đề thi ở Việt Nam dùng Times New Roman; công thức toán vẫn là Cambria Math theo quy định của Word.',
+  'Cỡ chữ (pt)': 'Đề thi thường cỡ 12. Văn bản hành chính theo Nghị định 30/2020 là 13–14.',
+  'Lề trang': 'Chỉ dùng để tính bề rộng bảng cho khớp cột chữ. Lề thật của tài liệu phải đặt trong Word: Layout → Margins → Custom Margins.',
+  'Giãn dòng': 'Đề thi thường để Đơn cho gọn trang. Văn bản hành chính yêu cầu ít nhất 1,5 dòng.',
+
+  // --- đầu đề
+  'Cơ quan quản lý': 'Dòng trên cùng bên trái, vd SỞ GD&ĐT HÀ NỘI hoặc PHÒNG GD&ĐT BÌNH XUYÊN. Để trống thì không có dòng này.',
+  'Trường / đơn vị': 'Dòng thứ hai bên trái, in đậm. Để trống thì bỏ qua.',
+  'Nhãn đề': 'In đậm bên trái, vd ĐỀ CHÍNH THỨC hoặc ĐỀ THAM KHẢO.',
+  'Số trang': 'Sinh ra dòng "(Đề thi có N trang)". Để trống thì không có dòng này.',
+  'Kỳ thi': 'Dòng đầu cột phải, in đậm, vd KỲ THI TỐT NGHIỆP THPT NĂM 2025.',
+  'Lớp': 'Ghép với Năm học thành dòng "LỚP 12, NĂM HỌC 2024-2025". Điền một trong hai cũng được.',
+  'Năm học': 'Ghép với Lớp thành một dòng. Để trống cả hai thì không có dòng này.',
+  'Nhãn dòng môn': 'Chữ đứng trước tên môn: "Môn thi" như đề Bộ, hay "MÔN" như đề học sinh giỏi.',
+  'Môn': 'Tên môn, tự viết hoa khi chèn.',
+  'Thời gian (phút)': 'Chỉ điền số, sinh ra dòng "Thời gian làm bài: 90 phút".',
+  'Ghi chú thời gian': 'Đặt trong ngoặc ngay sau số phút, vd "không kể thời gian phát đề" hoặc "không kể thời gian giao đề".',
+  'Mã đề': 'Sinh ra dòng "Mã đề thi 101" bên phải. Để trống thì đề không có mã đề.',
+  'Dòng họ tên & số báo danh': 'Thêm hai dòng chỗ trống cho thí sinh ghi họ tên và số báo danh, ngay dưới đầu đề.',
+
+  // --- tuỳ chọn khung đề
+  'Kèm đầu đề thi': 'Bỏ tick nếu tài liệu đã có sẵn đầu đề và chỉ cần dựng phần câu hỏi.',
+  'Kèm dòng kết đề': 'Dòng "…Hết…" kèm lời dặn thí sinh và chỗ ghi họ tên ở cuối đề.',
+  'Đánh số liên tục cả đề': 'Bật: đánh 1, 2, 3… xuyên suốt cả đề. Tắt: mỗi phần đánh lại từ câu 1, đúng cấu trúc đề Bộ GD&ĐT.',
+  'Có tiêu đề phần': 'Tắt nếu đề không chia PHẦN I, II, III — thường gặp ở đề tự luận và đề học sinh giỏi.',
+  'Tiêu đề phần ngắn gọn': 'Bỏ cụm nêu tên dạng câu, chỉ còn "PHẦN I. Thí sinh trả lời từ câu 1 đến câu 12. …".',
+  'Kèm bảng hướng dẫn chấm': 'Thêm bảng chấm vào cuối tài liệu, bắt đầu ở một trang mới.',
+  'Số dòng bảng chấm': 'Số dòng để trống của bảng hướng dẫn chấm kèm theo.',
+  '+ Thêm phần': 'Thêm một phần mới vào cuối danh sách.',
+  'Khôi phục mặc định': 'Về lại 12 – 4 – 6 theo cấu trúc đề Bộ GD&ĐT từ 2025.',
+  'Dựng vào Word': 'Chèn cả khung đề vào vị trí con trỏ, một lần duy nhất.',
+
+  // --- tab Chèn
+  'Loại bảng': 'Bảng biến thiên có 3 dòng (x, đạo hàm, hàm số); bảng xét dấu chỉ 2 dòng.',
+  'Tên biến': 'Chữ ở đầu dòng thứ nhất, thường là x.',
+  'Tên hàm': 'Chữ ở đầu dòng cuối, thường là f(x) hoặc y.',
+  'Tên đạo hàm': 'Chữ ở đầu dòng giữa của bảng biến thiên, thường là f′(x).',
+  'Nghiệm / điểm đặc biệt': 'Các mốc trên trục, cách nhau bằng dấu phẩy, vd: -1, 0, 2.',
+  'Kèm −∞ và +∞': 'Thêm hai đầu mút vô cực vào hai bên bảng.',
+  'Chèn bảng vào Word': 'Chèn bảng đúng như phần Xem trước ở trên.',
+  'Đầu đề thi': 'Chèn riêng đầu đề vào vị trí con trỏ, dùng thông tin đã nhập ở tab Tạo đề.',
+  'Dòng kết đề (…Hết…)': 'Chèn riêng khối kết đề vào vị trí con trỏ.',
+  'Số dòng trống': 'Số dòng để trống của bảng sắp chèn.',
+  'Câu | Ý | Nội dung | Điểm': 'Bảng hướng dẫn chấm 4 cột, có cột Ý cho các ý a, b, c.',
+  'Câu | Nội dung | Điểm': 'Bảng 3 cột, thường dùng cho bảng cấu trúc đề.',
+
+  // --- tab Hoàn thiện
+  'Đáp án': 'Nhận "1A 2B 3C", "1.A, 2.B", "ABCD…" hoặc đáp án đúng/sai kiểu "1 ĐSSĐ".',
+  'Số câu mỗi dòng': 'Bảng đáp án xuống dòng sau bao nhiêu câu.',
+  'Câu bắt đầu': 'Số câu đầu tiên, dùng khi đáp án nhập vào chỉ có chữ cái mà không có số.',
+  'Số câu (bảng trống)': 'Số cột của bảng đáp án trống sắp chèn.',
+  'Chèn bảng đáp án': 'Chèn bảng đáp án từ chuỗi đã nhập ở ô Đáp án.',
+  'Bảng trống': 'Chèn bảng đáp án chưa điền, để tự viết tay.',
+  'Đánh số lại từ': 'Số bắt đầu khi đánh số lại toàn bộ câu trong tài liệu.',
+  'Đánh số lại các câu': 'Quét cả tài liệu, đánh số lại mọi đoạn bắt đầu bằng "Câu n." theo thứ tự hiện tại. Chỉ chạy trong Word.',
+  'Trộn đề gốc': 'Mã đề cách nhau bằng dấu phẩy, vd: 101, 102, 103, 104.',
+  'Đáp án đề gốc': 'Nhập để add-in tính luôn bảng đáp án cho từng mã đề sau khi trộn.',
+  'Trộn thành các mã đề': 'Giữ nguyên đề gốc, nối thêm từng mã đề vào cuối tài liệu, mỗi mã một trang mới. Lưu tài liệu trước khi bấm. Chỉ chạy trong Word.',
+};
+
+// Nhãn ô nằm ở <span> đầu tiên của .field; nút thì lấy đúng chữ trên nút.
+function applyHints(root) {
+  root.querySelectorAll('.field').forEach((field) => {
+    const label = field.firstChild ? field.firstChild.textContent : '';
+    const hint = HINTS[label];
+    if (!hint) return;
+    field.title = hint;
+    field.querySelectorAll('input, select, textarea').forEach((el) => {
+      el.title = hint;
+    });
+  });
+  root.querySelectorAll('.act').forEach((btn) => {
+    const hint = HINTS[btn.textContent];
+    if (hint) btn.title = hint;
+  });
+}
+
 // ---------------------------------------------------------------- tab Đề thi
 
 const PARTS_KEY = 'mathSymbols.parts';
@@ -321,12 +402,14 @@ function renderBuildPanel(panel) {
     if (part.kind === 'tl') {
       const diem = input('', part.diem || '2,0', { placeholder: '2,0' });
       diem.className = 'tiny';
+      diem.title = 'Điểm ghi trong ngoặc, vd "Câu 1 (2,0 điểm).".';
       diem.addEventListener('input', () => {
         part.diem = diem.value;
         touchParts();
       });
       const subs = input('', String(part.subs || 0), { type: 'number', min: 0, max: 5 });
       subs.className = 'tiny';
+      subs.title = 'Số ý a), b), c) của mỗi câu. Để 0 thì câu không chia ý.';
       subs.addEventListener('input', () => {
         part.subs = parseInt(subs.value, 10) || 0;
         touchParts();
@@ -352,6 +435,7 @@ function renderBuildPanel(panel) {
       }
     );
     cols.className = 'tiny';
+    cols.title = 'Xếp 4 phương án A, B, C, D thành mấy cột.';
     return [cols];
   }
 
@@ -363,8 +447,10 @@ function renderBuildPanel(panel) {
         renderParts();
         touchParts();
       });
+      kindSel.title = 'Dạng câu hỏi của phần này.';
       const count = input('', String(part.count), { type: 'number', min: 0, max: 99 });
       count.className = 'tiny';
+      count.title = 'Số câu của phần này. Để 0 thì bỏ hẳn phần, kể cả dòng tiêu đề.';
       count.addEventListener('input', () => {
         part.count = parseInt(count.value, 10) || 0;
         touchParts();
@@ -404,6 +490,9 @@ function renderBuildPanel(panel) {
         type: 'text',
         class: 'part-title',
         placeholder: 'Tiêu đề tự sinh theo chuẩn — gõ để thay bằng chữ của mình',
+        title:
+          'Để trống thì tự sinh theo câu chữ đề Bộ GD&ĐT từ 2025, tự cập nhật khi đổi số câu. ' +
+          'Gõ vào để thay bằng chữ của mình.',
       });
       title.value = part.title || '';
       title.addEventListener('input', () => {
@@ -518,6 +607,7 @@ function renderBuildPanel(panel) {
   renderParts();
   savePageSetting();
   skelSummary();
+  applyHints(panel);
 }
 
 // ------------------------------------------------------------------ tab Chèn
@@ -581,6 +671,8 @@ function renderInsertPanel(panel) {
       ),
     ])
   );
+
+  applyHints(panel);
 }
 
 // -------------------------------------------------- bảng biến thiên
@@ -769,6 +861,7 @@ function renderVariationPanel(panel) {
   );
 
   refreshBbt();
+  applyHints(panel);
 }
 
 // ------------------------------------------------ tab Đáp án & trộn đề
@@ -896,6 +989,7 @@ function renderAnswerPanel(panel) {
     )
   );
   panel.appendChild(h('div', { id: 'shuffle-map' }));
+  applyHints(panel);
 }
 
 let lastPlans = null;
