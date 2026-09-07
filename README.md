@@ -13,9 +13,9 @@ Task pane mở ra ở tab **Đề thi**; ba tab công cụ đứng trước, nh�
   - *Ngoặc & ma trận*: 6 loại ngoặc, tổ hợp, hệ 2–3 phương trình, ma trận 2x2/3x3, định thức, vector cột.
   - *Hàm & dấu*: lim, max, sin/cos/tan/ln, log cơ số, đạo hàm thường và riêng, vector, hat, chấm trên, gạch trên/dưới, ngoặc nhọn trên/dưới.
 - **Ba tab công cụ soạn đề thi**:
-  - *Đề thi*: chọn **Times New Roman cỡ 12** (hoặc phông/cỡ khác) áp cho mọi thứ add-in chèn ra, và chọn **kiểu đề**:
+  - *Đề thi*: mục **Định dạng chuẩn** đặt phông (mặc định Times New Roman 12), cỡ chữ, **lề trang** và **giãn dòng** theo Nghị định 30/2020/NĐ-CP (A4, lề trái 30–35mm, phải 15–20mm, trên/dưới 20–25mm). Lề trang dùng để tính bề rộng bảng cho khớp cột chữ — add-in không đổi được lề của tài liệu. Sau đó chọn **kiểu đề**:
     - *Tự luận / học sinh giỏi*: đầu đề Phòng GD&ĐT + ĐỀ CHÍNH THỨC / kỳ thi / lớp + năm học / MÔN / thời gian "(không kể thời gian giao đề)" / số trang; câu dạng `Câu 1 (4,0 điểm).` kèm các ý a) b) c); dòng kết `…Hết…` với lời dặn và chỗ ghi họ tên; bảng hướng dẫn chấm `Câu | Ý | Nội dung | Điểm` và bảng cấu trúc đề `Câu | Nội dung | Điểm`.
-    - *Trắc nghiệm*: đầu đề Sở/Trường có mã đề, tiêu đề Phần I/II/III theo cấu trúc đề THPT, chèn hàng loạt câu trắc nghiệm A–D (1/2/4 cột), câu đúng/sai a–d, câu trả lời ngắn.
+    - *Trắc nghiệm*: đầu đề theo mẫu đề Bộ GD&ĐT (`Môn thi: TOÁN`, `Thời gian làm bài: 90 phút, không kể thời gian phát đề`, `Mã đề thi 101`, `(Đề thi có 04 trang)`, họ tên và số báo danh trên hai dòng); tiêu đề Phần I/II/III lấy đúng câu chữ đề tham khảo từ 2025 với số câu đặt được (mặc định Toán 12 – 4 – 6) — mỗi phần đánh số lại từ câu 1 nên bấm tiêu đề phần sẽ đưa ô "Bắt đầu từ câu" về 1; chèn hàng loạt câu trắc nghiệm A–D (1/2/4 cột), câu đúng/sai a–d, câu trả lời ngắn.
 
     Cả hai kiểu đều nhớ lại nội dung đã nhập cho lần mở sau, và ô "Bắt đầu từ câu" tự tăng sau mỗi lần chèn.
   - *Bảng BT*: dựng bảng biến thiên (3 dòng) hoặc bảng xét dấu (2 dòng) — nhập nghiệm, chọn dấu từng khoảng, xem trước ngay trong task pane rồi chèn ra thành bảng Word thật; mũi tên ↗ ↘ tự suy ra từ dấu đạo hàm.

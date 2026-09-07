@@ -366,3 +366,50 @@ table.bbt tr.tall td:last-of-type { border-right: 1px solid var(--border); }
 }
 
 .steps li { margin-bottom: 3px; }
+
+/* Khung gấp/mở trong tab công cụ — task pane hẹp nên mặc định chỉ mở mục đang cần. */
+.tool-section {
+  margin-bottom: 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+}
+
+.tool-section > summary {
+  padding: 6px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.tool-section > summary::-webkit-details-marker { display: none; }
+
+.tool-section > summary::before {
+  content: "▸";
+  display: inline-block;
+  width: 12px;
+  color: var(--muted);
+  transition: transform 0.12s;
+}
+
+.tool-section[open] > summary::before { transform: rotate(90deg); }
+
+.tool-section > summary:hover { background: var(--hover); }
+
+.tool-section[open] > summary { border-bottom: 1px solid var(--border); }
+
+.tool-section > *:not(summary) { margin-left: 8px; margin-right: 8px; }
+
+.tool-section > *:not(summary):first-of-type { margin-top: 8px; }
+
+.tool-section > *:last-child { margin-bottom: 8px; }
+
+.measure {
+  margin: 0 0 6px;
+  color: var(--muted);
+  font-size: 11px;
+  font-style: italic;
+}

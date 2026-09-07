@@ -28,7 +28,78 @@ function saveFontSetting() {
   }
 }
 
+// Lề trang theo Nghị định 30/2020/NĐ-CP: A4, trên/dưới 20–25mm, trái 30–35mm,
+// phải 15–20mm. Bảng chèn ra phải khớp cột chữ nên phải biết lề thật của tài liệu.
+const PAGE_KEY = 'mathSymbols.page';
+const MARGIN_PRESETS = [
+  ['30-20', 'Trái 30 – phải 20 mm (chuẩn NĐ 30)'],
+  ['35-20', 'Trái 35 – phải 20 mm'],
+  ['30-15', 'Trái 30 – phải 15 mm'],
+  ['20-20', 'Lề 2 cm đều'],
+];
+const LINE_PRESETS = [
+  ['1', 'Đơn'],
+  ['1.15', '1,15'],
+  ['1.5', '1,5 (chuẩn văn bản hành chính)'],
+];
+
+function applyPage(marginKey, lineValue) {
+  const [left, right] = marginKey.split('-').map(Number);
+  setPageMargins(left, right);
+  setLineSpacing(parseFloat(lineValue));
+}
+
+function loadPageSetting() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(PAGE_KEY));
+    if (saved) applyPage(saved.margin, saved.line);
+  } catch {
+    // hỏng localStorage thì dùng mặc định chuẩn NĐ 30
+  }
+}
+
+function savePageSetting() {
+  const margin = val('page-margin') || '30-20';
+  const line = val('page-line') || '1';
+  applyPage(margin, line);
+  try {
+    localStorage.setItem(PAGE_KEY, JSON.stringify({ margin, line }));
+  } catch {
+    // không lưu được thì vẫn áp dụng cho phiên hiện tại
+  }
+  const out = document.getElementById('page-width');
+  if (out) out.textContent = `Cột chữ rộng ${Math.round(PAGE.width / MM_TO_TWIP)} mm`;
+}
+
+// Khung gấp/mở được — task pane hẹp, mở hết mọi mục cùng lúc thì phải cuộn rất dài.
+const OPEN_KEY = 'mathSymbols.openSections';
+
+function openState() {
+  try {
+    return JSON.parse(localStorage.getItem(OPEN_KEY)) || {};
+  } catch {
+    return {};
+  }
+}
+
+function section(title, children, defaultOpen) {
+  const state = openState();
+  const box = h('details', { class: 'tool-section' }, [h('summary', { text: title })].concat(children));
+  if (state[title] === undefined ? defaultOpen : state[title]) box.setAttribute('open', '');
+  box.addEventListener('toggle', () => {
+    const next = openState();
+    next[title] = box.open;
+    try {
+      localStorage.setItem(OPEN_KEY, JSON.stringify(next));
+    } catch {
+      // mất phần nhớ trạng thái gấp/mở thôi, không ảnh hưởng gì khác
+    }
+  });
+  return box;
+}
+
 loadFontSetting();
+loadPageSetting();
 
 function h(tag, attrs, children) {
   const node = document.createElement(tag);
@@ -148,22 +219,47 @@ function readHeaderForm() {
 function renderExamPanel(panel) {
   const saved = loadHeader();
 
-  panel.appendChild(heading('Phông chữ'));
   const fontSel = select(
     FONT_CHOICES.map((f) => [f, f]),
     FONT.name,
     saveFontSetting
   );
   fontSel.id = 'font-name';
-  panel.appendChild(fieldRow('Phông', fontSel));
   const sizeBox = input('font-size', String(FONT.size), { type: 'number', min: 8, max: 20 });
   sizeBox.addEventListener('input', saveFontSetting);
-  panel.appendChild(fieldRow('Cỡ chữ (pt)', sizeBox));
+  const marginSel = select(MARGIN_PRESETS, '30-20', savePageSetting);
+  marginSel.id = 'page-margin';
+  const lineSel = select(LINE_PRESETS, '1', savePageSetting);
+  lineSel.id = 'page-line';
+  try {
+    const savedPage = JSON.parse(localStorage.getItem(PAGE_KEY));
+    if (savedPage) {
+      marginSel.value = savedPage.margin;
+      lineSel.value = savedPage.line;
+    }
+  } catch {
+    // giữ mặc định
+  }
+
   panel.appendChild(
-    note('Áp cho mọi thứ add-in chèn ra ở cả ba tab công cụ. Công thức toán vẫn dùng Cambria Math như Word quy định.')
+    section(
+      'Định dạng chuẩn',
+      [
+        fieldRow('Phông', fontSel),
+        fieldRow('Cỡ chữ (pt)', sizeBox),
+        fieldRow('Lề trang', marginSel),
+        fieldRow('Giãn dòng', lineSel),
+        h('p', { id: 'page-width', class: 'measure' }),
+        note(
+          'Áp cho mọi thứ add-in chèn ra ở cả ba tab. Lề trang ở đây chỉ để tính bề rộng ' +
+            'bảng cho khớp cột chữ — add-in không đổi được lề của tài liệu, thầy/cô đặt trong ' +
+            'Word: Layout → Margins → Custom Margins. Công thức toán vẫn dùng Cambria Math.'
+        ),
+      ],
+      false
+    )
   );
 
-  panel.appendChild(heading('Đầu đề thi'));
   let style = loadStyle();
   const styleSel = select(
     [
@@ -177,16 +273,14 @@ function renderExamPanel(panel) {
       applyStyle();
     }
   );
-  panel.appendChild(fieldRow('Kiểu đề', styleSel));
-
   const rows = {};
-  HEADER_FIELDS.forEach(([key, label, placeholder, only]) => {
+  const headerRows = HEADER_FIELDS.map(([key, label, placeholder, only]) => {
     const row = fieldRow(label, input(`hdr-${key}`, saved[key], { placeholder }));
     rows[key] = { row, only };
-    panel.appendChild(row);
+    return row;
   });
 
-  // Ẩn ô không thuộc kiểu đề đang chọn, và bật/tắt các nút chỉ hợp với một kiểu.
+  // Ẩn ô không thuộc kiểu đề đang chọn, và bật/tắt các khối chỉ hợp với một kiểu.
   function applyStyle() {
     Object.values(rows).forEach(({ row, only }) => {
       row.classList.toggle('hidden', !!only && only !== style);
@@ -197,26 +291,49 @@ function renderExamPanel(panel) {
   }
 
   panel.appendChild(
-    button(
-      'Chèn đầu đề thi',
-      () => Pane.insertOoxml(examHeader(readHeaderForm(), style), 'Đã chèn đầu đề thi'),
+    section(
+      'Đầu đề thi',
+      [fieldRow('Kiểu đề', styleSel)]
+        .concat(headerRows)
+        .concat([
+          button(
+            'Chèn đầu đề thi',
+            () => Pane.insertOoxml(examHeader(readHeaderForm(), style), 'Đã chèn đầu đề thi'),
+            true
+          ),
+        ]),
       true
     )
   );
 
-  const sections = h('div', { 'data-only': 'tn' }, [
-    heading('Tiêu đề phần'),
-    h('div', { class: 'btn-row' }, [
-      button('PHẦN I', () => Pane.insertOoxml(sectionHeading(1), 'Đã chèn tiêu đề Phần I')),
-      button('PHẦN II', () => Pane.insertOoxml(sectionHeading(2), 'Đã chèn tiêu đề Phần II')),
-      button('PHẦN III', () => Pane.insertOoxml(sectionHeading(3), 'Đã chèn tiêu đề Phần III')),
-    ]),
-  ]);
-  panel.appendChild(sections);
+  // Đề Bộ đánh số lại từ câu 1 ở mỗi phần, nên chèn tiêu đề phần thì đưa ô
+  // "Bắt đầu từ câu" về 1 luôn cho khỏi phải sửa tay.
+  const insertPart = (which) => {
+    const count = Math.max(1, num(`part-${which}`, SECTION_COUNTS[which]));
+    Pane.insertOoxml(sectionHeading(which, count), `Đã chèn tiêu đề Phần ${'I'.repeat(which)}`);
+    const startBox = document.getElementById('q-start');
+    if (startBox) startBox.value = '1';
+  };
 
-  panel.appendChild(heading('Chèn câu hỏi'));
-  panel.appendChild(fieldRow('Bắt đầu từ câu', input('q-start', '1', { type: 'number', min: 1 })));
-  panel.appendChild(fieldRow('Số câu chèn', input('q-count', '5', { type: 'number', min: 1, max: 100 })));
+  const partSection = section('Tiêu đề phần', [
+    fieldRow('Số câu Phần I', input('part-1', '12', { type: 'number', min: 1, max: 99 })),
+    fieldRow('Số câu Phần II', input('part-2', '4', { type: 'number', min: 1, max: 99 })),
+    fieldRow('Số câu Phần III', input('part-3', '6', { type: 'number', min: 1, max: 99 })),
+    h('div', { class: 'btn-row' }, [
+      button('PHẦN I', () => insertPart(1)),
+      button('PHẦN II', () => insertPart(2)),
+      button('PHẦN III', () => insertPart(3)),
+    ]),
+    note(
+      'Câu chữ lấy theo đề tham khảo của Bộ GD&ĐT từ 2025 (Toán: 12 – 4 – 6 câu). ' +
+        'Mỗi phần đánh số lại từ câu 1, nên bấm tiêu đề phần sẽ tự đưa ô "Bắt đầu từ câu" về 1.'
+    ),
+  ]);
+  partSection.dataset.only = 'tn';
+  panel.appendChild(partSection);
+
+  const startRow = fieldRow('Bắt đầu từ câu', input('q-start', '1', { type: 'number', min: 1 }));
+  const countRow = fieldRow('Số câu chèn', input('q-count', '5', { type: 'number', min: 1, max: 100 }));
   const colsSel = select(
     [
       ['2', '2 cột'],
@@ -228,14 +345,11 @@ function renderExamPanel(panel) {
   colsSel.id = 'q-cols';
   const colsRow = fieldRow('Xếp phương án', colsSel);
   colsRow.dataset.only = 'tn';
-  panel.appendChild(colsRow);
 
   const diemRow = fieldRow('Điểm mỗi câu', input('q-diem', '2,0', { placeholder: '2,0' }));
   diemRow.dataset.only = 'tl';
-  panel.appendChild(diemRow);
   const subsRow = fieldRow('Số ý (a, b, c...)', input('q-subs', '0', { type: 'number', min: 0, max: 5 }));
   subsRow.dataset.only = 'tl';
-  panel.appendChild(subsRow);
 
   const advance = (start, count) => {
     const startBox = document.getElementById('q-start');
@@ -268,18 +382,7 @@ function renderExamPanel(panel) {
       'Chèn ra "Câu n (2,0 điểm)." rồi các ý a), b), c) mỗi ý một dòng — bấm vào sau dấu ' +
         'chấm để gõ nội dung. Ô "Bắt đầu từ câu" tự tăng sau mỗi lần chèn.'
     ),
-    heading('Bảng hướng dẫn chấm'),
-    fieldRow('Số dòng trống', input('hdc-rows', '10', { type: 'number', min: 1, max: 60 })),
-    h('div', { class: 'btn-row' }, [
-      button('Câu | Ý | Nội dung | Điểm', () =>
-        Pane.insertOoxml(gradingTable(Math.max(1, num('hdc-rows', 10)), true), 'Đã chèn bảng hướng dẫn chấm')
-      ),
-      button('Câu | Nội dung | Điểm', () =>
-        Pane.insertOoxml(gradingTable(Math.max(1, num('hdc-rows', 10)), false), 'Đã chèn bảng cấu trúc đề')
-      ),
-    ]),
   ]);
-  panel.appendChild(essayButtons);
 
   const mcButtons = h('div', { 'data-only': 'tn' }, [
     h('div', { class: 'btn-row' }, [
@@ -292,25 +395,46 @@ function renderExamPanel(panel) {
         'sau mỗi nhãn A. B. C. D. để gõ phương án. Ô "Bắt đầu từ câu" tự tăng sau mỗi lần chèn.'
     ),
   ]);
-  panel.appendChild(mcButtons);
 
-  panel.appendChild(heading('Nếu đề phải nộp bằng MathType'));
   panel.appendChild(
-    steps([
-      'Soạn xong cả đề bằng add-in này (công thức là Equation của Word).',
-      'Word → tab MathType → Convert Equations.',
-      'Nguồn: Word 2007 and later (OMML) equations — Phạm vi: Whole document — ' +
-        'Đích: MathType equations (OLE objects).',
-    ])
-  );
-  panel.appendChild(
-    note(
-      'Chuyển ở bước cuối cùng và giữ lại một bản chưa chuyển: sau khi thành MathType, ' +
-        'muốn sửa công thức là phải mở MathType chứ không dùng lại add-in được. Bảng biến ' +
-        'thiên, bảng đáp án và khung câu hỏi không bị ảnh hưởng.'
+    section(
+      'Chèn câu hỏi',
+      [startRow, countRow, colsRow, diemRow, subsRow, essayButtons, mcButtons],
+      true
     )
   );
 
+  const hdc = section('Bảng hướng dẫn chấm', [
+    fieldRow('Số dòng trống', input('hdc-rows', '10', { type: 'number', min: 1, max: 60 })),
+    h('div', { class: 'btn-row' }, [
+      button('Câu | Ý | Nội dung | Điểm', () =>
+        Pane.insertOoxml(gradingTable(Math.max(1, num('hdc-rows', 10)), true), 'Đã chèn bảng hướng dẫn chấm')
+      ),
+      button('Câu | Nội dung | Điểm', () =>
+        Pane.insertOoxml(gradingTable(Math.max(1, num('hdc-rows', 10)), false), 'Đã chèn bảng cấu trúc đề')
+      ),
+    ]),
+  ]);
+  hdc.dataset.only = 'tl';
+  panel.appendChild(hdc);
+
+  panel.appendChild(
+    section('Nếu đề phải nộp bằng MathType', [
+      steps([
+        'Soạn xong cả đề bằng add-in này (công thức là Equation của Word).',
+        'Word → tab MathType → Convert Equations.',
+        'Nguồn: Word 2007 and later (OMML) equations — Phạm vi: Whole document — ' +
+          'Đích: MathType equations (OLE objects).',
+      ]),
+      note(
+        'Chuyển ở bước cuối cùng và giữ lại một bản chưa chuyển: sau khi thành MathType, ' +
+          'muốn sửa công thức là phải mở MathType chứ không dùng lại add-in được. Bảng biến ' +
+          'thiên, bảng đáp án và khung câu hỏi không bị ảnh hưởng.'
+      ),
+    ])
+  );
+
+  savePageSetting();
   applyStyle();
 }
 

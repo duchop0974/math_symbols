@@ -2,8 +2,27 @@
 // đầu đề thi, câu hỏi theo cấu trúc đề THPT, bảng biến thiên/xét dấu, bảng đáp án.
 // Tất cả đều đi qua wrapBody() của symbols.js để thành gói Flat OPC hoàn chỉnh.
 
-// Bề ngang vùng soạn thảo của A4 lề 2cm, tính bằng twip (1/20 pt).
-const TWIP_PAGE = 9070;
+// Bề ngang vùng soạn thảo, tính bằng twip (1/20 pt) — bảng chèn ra phải vừa đúng
+// cột chữ, nên phải khớp lề trang thật của tài liệu.
+// Mặc định theo Nghị định 30/2020/NĐ-CP: A4 210mm, lề trái 30mm, lề phải 20mm.
+const A4_WIDTH_MM = 210;
+const MM_TO_TWIP = 1440 / 25.4;
+
+const PAGE = { width: Math.round((A4_WIDTH_MM - 30 - 20) * MM_TO_TWIP) };
+
+function setPageMargins(leftMm, rightMm) {
+  const usable = A4_WIDTH_MM - leftMm - rightMm;
+  if (usable > 40) PAGE.width = Math.round(usable * MM_TO_TWIP);
+  return PAGE.width;
+}
+
+// Giãn dòng: 240 twip = đơn. NĐ 30/2020 yêu cầu ít nhất 1,5 dòng cho văn bản
+// hành chính, còn đề thi thường để đơn cho gọn trang.
+const LINE = { value: 240 };
+
+function setLineSpacing(multiple) {
+  LINE.value = Math.round(240 * multiple);
+}
 
 function esc(text) {
   return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -42,9 +61,16 @@ function run(content, opts = {}) {
 // sai thứ tự thì Word từ chối cả gói với thông báo "problem with its contents".
 // w:rPr trong w:pPr là định dạng của dấu kết đoạn — phải đặt phông ở đây nữa,
 // nếu không giáo viên gõ tiếp vào đoạn trống sẽ ra phông mặc định của Word.
+function spacingXml(opts) {
+  const attrs = [];
+  if (opts.spaceAfter !== undefined) attrs.push(`w:after="${opts.spaceAfter}"`);
+  if (LINE.value !== 240) attrs.push(`w:line="${LINE.value}" w:lineRule="auto"`);
+  return attrs.length ? `<w:spacing ${attrs.join(' ')}/>` : '';
+}
+
 function para(runsXml, opts = {}) {
   const ppr =
-    (opts.spaceAfter !== undefined ? `<w:spacing w:after="${opts.spaceAfter}"/>` : '') +
+    spacingXml(opts) +
     (opts.ind ? `<w:ind w:left="${opts.ind}"/>` : '') +
     (opts.jc ? `<w:jc w:val="${opts.jc}"/>` : '') +
     `<w:rPr>${fontProps(opts)}</w:rPr>`;
@@ -100,15 +126,15 @@ function tbl(widths, rowsXml, bordered) {
 // style 'tl': đề tự luận / học sinh giỏi — không có mã đề, họ tên nằm ở cuối đề
 // (dùng examFooter), theo đúng mẫu đề HSG các phòng GD&ĐT đang ra.
 function examHeader(f, style) {
-  const half = Math.floor(TWIP_PAGE / 2);
+  const half = Math.floor(PAGE.width / 2);
   const centred = { jc: 'center', spaceAfter: 0 };
   const essay = style === 'tl';
 
   let left = textPara(f.so || (essay ? 'PHÒNG GD&ĐT ...............' : 'SỞ GD&ĐT ...............'), centred);
   left += essay
     ? textPara('ĐỀ CHÍNH THỨC', { ...centred, bold: true })
-    : textPara(f.truong || 'TRƯỜNG ...............', { ...centred, bold: true }) +
-      textPara(`(Đề thi gồm ${f.soTrang || '...'} trang)`, { ...centred, italic: true });
+    : textPara(f.truong || 'ĐỀ THI CHÍNH THỨC', { ...centred, bold: true }) +
+      textPara(`(Đề thi có ${f.soTrang || '...'} trang)`, { ...centred, italic: true });
 
   let right = textPara(f.kyThi || (essay ? 'ĐỀ THI HỌC SINH GIỎI' : 'ĐỀ KIỂM TRA CUỐI HỌC KỲ I'), {
     ...centred,
@@ -126,10 +152,11 @@ function examHeader(f, style) {
       textPara(`Đề thi này gồm ${f.soTrang || '01'} trang`, { ...centred, italic: true });
   } else {
     right +=
-      textPara(`Môn: ${f.mon || 'Toán'}${f.khoi ? ` — Lớp ${f.khoi}` : ''}`, {
-        ...centred,
-        bold: true,
-      }) + textPara(`Thời gian làm bài: ${f.thoiGian || '90'} phút`, { ...centred, italic: true });
+      textPara(`Môn thi: ${(f.mon || 'Toán').toUpperCase()}`, { ...centred, bold: true }) +
+      textPara(
+        `Thời gian làm bài: ${f.thoiGian || '90'} phút, không kể thời gian phát đề`,
+        { ...centred, italic: true }
+      );
   }
 
   const table = tbl(
@@ -140,13 +167,15 @@ function examHeader(f, style) {
 
   if (essay) return wrapBody(table);
 
+  // Đề Bộ ghi "Mã đề thi 101" (không có dấu hai chấm), họ tên và số báo danh
+  // nằm trên hai dòng riêng ngay dưới đầu đề.
   return wrapBody(
     table +
-      textPara(`Mã đề: ${f.maDe || '...'}`, { jc: 'right', bold: true }) +
-      textPara(
-        'Họ và tên thí sinh: ..................................................  ' +
-          'Số báo danh: ....................'
-      ) +
+      textPara(`Mã đề thi ${f.maDe || '...'}`, { jc: 'right', bold: true }) +
+      textPara('Họ, tên thí sinh: ................................................................', {
+        spaceAfter: 0,
+      }) +
+      textPara('Số báo danh: ................................................................') +
       emptyPara()
   );
 }
@@ -168,18 +197,31 @@ function examFooter() {
 
 // ---------------------------------------------------------------- câu hỏi
 
-const SECTIONS = {
-  1:
-    'PHẦN I. Câu trắc nghiệm nhiều phương án lựa chọn. Thí sinh trả lời từ câu 1 đến câu ..., ' +
-    'mỗi câu chỉ chọn một phương án.',
-  2:
-    'PHẦN II. Câu trắc nghiệm đúng sai. Thí sinh trả lời từ câu ... đến câu ..., ' +
-    'trong mỗi ý a), b), c), d) ở mỗi câu thí sinh chọn đúng hoặc sai.',
-  3: 'PHẦN III. Câu trắc nghiệm trả lời ngắn. Thí sinh trả lời từ câu ... đến câu ....',
-};
+// Câu chữ lấy đúng theo đề tham khảo/chính thức của Bộ GD&ĐT từ 2025. Lưu ý mỗi
+// phần đánh số lại từ câu 1, không đánh số liên tục qua cả ba phần.
+// Số câu mặc định theo đề Toán tốt nghiệp THPT: 12 – 4 – 6.
+const SECTION_COUNTS = { 1: 12, 2: 4, 3: 6 };
 
-function sectionHeading(which) {
-  return wrapBody(textPara(SECTIONS[which], { bold: true }));
+function sectionText(which, count) {
+  const n = count || SECTION_COUNTS[which];
+  const range = `Thí sinh trả lời từ câu 1 đến câu ${n}.`;
+  if (which === 1) {
+    return (
+      'PHẦN I. Câu trắc nghiệm nhiều phương án lựa chọn. ' +
+      `${range} Mỗi câu hỏi thí sinh chỉ chọn một phương án.`
+    );
+  }
+  if (which === 2) {
+    return (
+      'PHẦN II. Câu trắc nghiệm đúng sai. ' +
+      `${range} Trong mỗi ý a), b), c), d) ở mỗi câu, thí sinh chọn đúng hoặc sai.`
+    );
+  }
+  return `PHẦN III. Câu trắc nghiệm trả lời ngắn. ${range}`;
+}
+
+function sectionHeading(which, count) {
+  return wrapBody(textPara(sectionText(which, count), { bold: true }));
 }
 
 const MC_LABELS = ['A.', 'B.', 'C.', 'D.'];
@@ -191,7 +233,7 @@ function multipleChoice(no, cols) {
     const lines = MC_LABELS.map((l) => textPara(`${l} `, { ind: 284, spaceAfter: 0 }));
     return stem + lines.join('') + emptyPara();
   }
-  const width = Math.floor(TWIP_PAGE / cols);
+  const width = Math.floor(PAGE.width / cols);
   const cells = MC_LABELS.map((l) =>
     tc(width, textPara(`${l} `, { spaceAfter: 0 }), { vAlign: 'top' })
   );
@@ -246,7 +288,7 @@ function gradingTable(rowCount, withSubColumn) {
   const heads = withSubColumn ? ['Câu', 'Ý', 'Nội dung', 'Điểm'] : ['Câu', 'Nội dung', 'Điểm'];
   const narrow = 700;
   const points = 1100;
-  const wide = TWIP_PAGE - points - narrow * (withSubColumn ? 2 : 1);
+  const wide = PAGE.width - points - narrow * (withSubColumn ? 2 : 1);
   const widths = withSubColumn
     ? [narrow, narrow, wide, points]
     : [narrow, wide, points];
@@ -287,7 +329,7 @@ function parseAnswerKey(raw, start) {
 
 function answerKeyTable(entries, perRow) {
   const labelW = 760;
-  const cellW = Math.floor((TWIP_PAGE - labelW) / perRow);
+  const cellW = Math.floor((PAGE.width - labelW) / perRow);
   const widths = [labelW, ...new Array(perRow).fill(cellW)];
   let rows = '';
   for (let i = 0; i < entries.length; i += perRow) {
@@ -315,7 +357,7 @@ function variationTable(cfg) {
   const nodeW = 620;
   const gapW = Math.max(
     700,
-    Math.floor((TWIP_PAGE - labelW - nodeW * nodes.length) / signs.length)
+    Math.floor((PAGE.width - labelW - nodeW * nodes.length) / signs.length)
   );
 
   const widths = [labelW];

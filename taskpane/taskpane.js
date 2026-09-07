@@ -169,14 +169,18 @@
       return;
     }
 
+    // Ô tìm kiếm chỉ tra được ký hiệu, nên giấu đi khi đang ở tab công cụ.
+    const searchBar = document.querySelector('.search-bar');
     const tool = toolTab(activeCategory);
     if (tool) {
+      searchBar.classList.add('hidden');
       favSection.classList.add('hidden');
       panel.innerHTML = '';
       panel.className = 'category tool-panel';
       tool.render(panel);
       return;
     }
+    searchBar.classList.remove('hidden');
     panel.className = 'category';
 
     const favItems = allItems().filter(isFav);
