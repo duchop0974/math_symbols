@@ -9,26 +9,52 @@ function esc(text) {
   return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-function run(content, opts = {}) {
-  const rpr =
+// Phông dùng cho mọi thứ add-in chèn ra. Đề thi ở Việt Nam mặc định Times New
+// Roman 12; không đặt gì thì Word lấy phông Normal của tài liệu (thường Calibri).
+const FONT = { name: 'Times New Roman', size: 12 };
+
+function setFont(name, size) {
+  if (name) FONT.name = name;
+  if (size) FONT.size = size;
+}
+
+// Thứ tự con của w:rPr theo schema: rFonts → b → i → sz → szCs.
+// w:sz tính theo nửa point, nên 12pt = 24.
+function fontProps(opts = {}) {
+  const half = Math.round((opts.size || FONT.size) * 2);
+  const family = esc(FONT.name);
+  return (
+    `<w:rFonts w:ascii="${family}" w:hAnsi="${family}" w:cs="${family}"/>` +
     (opts.bold ? '<w:b/>' : '') +
     (opts.italic ? '<w:i/>' : '') +
-    (opts.size ? `<w:sz w:val="${opts.size * 2}"/>` : '');
-  const props = rpr ? `<w:rPr>${rpr}</w:rPr>` : '';
-  return `<w:r>${props}<w:t xml:space="preserve">${esc(content)}</w:t></w:r>`;
+    `<w:sz w:val="${half}"/><w:szCs w:val="${half}"/>`
+  );
+}
+
+function run(content, opts = {}) {
+  return (
+    `<w:r><w:rPr>${fontProps(opts)}</w:rPr>` +
+    `<w:t xml:space="preserve">${esc(content)}</w:t></w:r>`
+  );
 }
 
 // Thứ tự các con của w:pPr phải đúng theo schema OOXML (spacing → ind → jc),
 // sai thứ tự thì Word từ chối cả gói với thông báo "problem with its contents".
+// w:rPr trong w:pPr là định dạng của dấu kết đoạn — phải đặt phông ở đây nữa,
+// nếu không giáo viên gõ tiếp vào đoạn trống sẽ ra phông mặc định của Word.
 function para(runsXml, opts = {}) {
   const ppr =
     (opts.spaceAfter !== undefined ? `<w:spacing w:after="${opts.spaceAfter}"/>` : '') +
     (opts.ind ? `<w:ind w:left="${opts.ind}"/>` : '') +
-    (opts.jc ? `<w:jc w:val="${opts.jc}"/>` : '');
-  return `<w:p>${ppr ? `<w:pPr>${ppr}</w:pPr>` : ''}${runsXml}</w:p>`;
+    (opts.jc ? `<w:jc w:val="${opts.jc}"/>` : '') +
+    `<w:rPr>${fontProps(opts)}</w:rPr>`;
+  return `<w:p><w:pPr>${ppr}</w:pPr>${runsXml}</w:p>`;
 }
 
 const textPara = (content, opts = {}) => para(run(content, opts), opts);
+
+// Đoạn trống vẫn phải mang phông, nên không dùng <w:p/> trần.
+const emptyPara = (opts) => para('', opts);
 
 const BORDER_SIDES = ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'];
 
@@ -44,7 +70,7 @@ function tc(width, contentXml, opts = {}) {
   return (
     `<w:tc><w:tcPr><w:tcW w:w="${width}" w:type="dxa"/>${borders}` +
     `<w:vAlign w:val="${opts.vAlign || 'center'}"/></w:tcPr>` +
-    `${contentXml || '<w:p/>'}</w:tc>`
+    `${contentXml || emptyPara()}</w:tc>`
   );
 }
 
@@ -64,32 +90,55 @@ function tbl(widths, rowsXml, bordered) {
     borderXml('tblBorders', sides) +
     '<w:tblLayout w:type="fixed"/></w:tblPr>' +
     `<w:tblGrid>${widths.map((w) => `<w:gridCol w:w="${w}"/>`).join('')}</w:tblGrid>` +
-    `${rowsXml}</w:tbl><w:p/>`
+    `${rowsXml}</w:tbl>${emptyPara()}`
   );
 }
 
 // ---------------------------------------------------------------- đầu đề thi
 
-function examHeader(f) {
+// style 'tn': đề trắc nghiệm, có mã đề và dòng họ tên ngay dưới đầu đề.
+// style 'tl': đề tự luận / học sinh giỏi — không có mã đề, họ tên nằm ở cuối đề
+// (dùng examFooter), theo đúng mẫu đề HSG các phòng GD&ĐT đang ra.
+function examHeader(f, style) {
   const half = Math.floor(TWIP_PAGE / 2);
   const centred = { jc: 'center', spaceAfter: 0 };
-  const left =
-    textPara(f.so || 'SỞ GD&ĐT .....................', centred) +
-    textPara(f.truong || 'TRƯỜNG .....................', { ...centred, bold: true }) +
-    textPara(`(Đề thi gồm ${f.soTrang || '...'} trang)`, { ...centred, italic: true });
-  const right =
-    textPara(f.kyThi || 'ĐỀ KIỂM TRA CUỐI HỌC KỲ I', { ...centred, bold: true }) +
-    textPara(`Môn: ${f.mon || 'Toán'}${f.khoi ? ` — Lớp ${f.khoi}` : ''}`, {
-      ...centred,
-      bold: true,
-    }) +
-    textPara(`Thời gian làm bài: ${f.thoiGian || '90'} phút`, { ...centred, italic: true });
+  const essay = style === 'tl';
+
+  let left = textPara(f.so || (essay ? 'PHÒNG GD&ĐT ...............' : 'SỞ GD&ĐT ...............'), centred);
+  left += essay
+    ? textPara('ĐỀ CHÍNH THỨC', { ...centred, bold: true })
+    : textPara(f.truong || 'TRƯỜNG ...............', { ...centred, bold: true }) +
+      textPara(`(Đề thi gồm ${f.soTrang || '...'} trang)`, { ...centred, italic: true });
+
+  let right = textPara(f.kyThi || (essay ? 'ĐỀ THI HỌC SINH GIỎI' : 'ĐỀ KIỂM TRA CUỐI HỌC KỲ I'), {
+    ...centred,
+    bold: true,
+  });
+  if (essay) {
+    const lop = `LỚP ${f.khoi || '...'}`;
+    right +=
+      textPara(f.namHoc ? `${lop}, NĂM HỌC ${f.namHoc}` : lop, { ...centred, bold: true }) +
+      textPara(`MÔN: ${(f.mon || 'Toán').toUpperCase()}`, { ...centred, bold: true }) +
+      textPara(
+        `Thời gian làm bài: ${f.thoiGian || '120'} phút (không kể thời gian giao đề)`,
+        { ...centred, italic: true }
+      ) +
+      textPara(`Đề thi này gồm ${f.soTrang || '01'} trang`, { ...centred, italic: true });
+  } else {
+    right +=
+      textPara(`Môn: ${f.mon || 'Toán'}${f.khoi ? ` — Lớp ${f.khoi}` : ''}`, {
+        ...centred,
+        bold: true,
+      }) + textPara(`Thời gian làm bài: ${f.thoiGian || '90'} phút`, { ...centred, italic: true });
+  }
 
   const table = tbl(
     [half, half],
     tr(tc(half, left, { vAlign: 'top' }) + tc(half, right, { vAlign: 'top' })),
     false
   );
+
+  if (essay) return wrapBody(table);
 
   return wrapBody(
     table +
@@ -98,7 +147,22 @@ function examHeader(f) {
         'Họ và tên thí sinh: ..................................................  ' +
           'Số báo danh: ....................'
       ) +
-      '<w:p/>'
+      emptyPara()
+  );
+}
+
+// Khối kết đề tự luận: dòng Hết, lời dặn và chỗ ghi họ tên thí sinh.
+function examFooter() {
+  return wrapBody(
+    textPara('…………..Hết…………', { jc: 'center', bold: true }) +
+      textPara(
+        'Thí sinh không được sử dụng máy tính cầm tay. Cán bộ coi thi không giải thích gì thêm.',
+        { jc: 'center', italic: true }
+      ) +
+      textPara(
+        'Họ và tên thí sinh: ..........................................................; ' +
+          'Số báo danh: ....................'
+      )
   );
 }
 
@@ -124,9 +188,8 @@ const TF_LABELS = ['a)', 'b)', 'c)', 'd)'];
 function multipleChoice(no, cols) {
   const stem = textPara(`Câu ${no}: `, { bold: true, spaceAfter: 0 });
   if (cols === 1) {
-    return (
-      stem + MC_LABELS.map((l) => textPara(`${l} `, { ind: 284, spaceAfter: 0 })).join('') + '<w:p/>'
-    );
+    const lines = MC_LABELS.map((l) => textPara(`${l} `, { ind: 284, spaceAfter: 0 }));
+    return stem + lines.join('') + emptyPara();
   }
   const width = Math.floor(TWIP_PAGE / cols);
   const cells = MC_LABELS.map((l) =>
@@ -141,12 +204,25 @@ function trueFalse(no) {
   return (
     textPara(`Câu ${no}: `, { bold: true, spaceAfter: 0 }) +
     TF_LABELS.map((l) => textPara(`${l} `, { ind: 284, spaceAfter: 0 })).join('') +
-    '<w:p/>'
+    emptyPara()
   );
 }
 
 function shortAnswer(no) {
-  return textPara(`Câu ${no}: `, { bold: true, spaceAfter: 0 }) + '<w:p/>';
+  return textPara(`Câu ${no}: `, { bold: true, spaceAfter: 0 }) + emptyPara();
+}
+
+const SUB_LABELS = ['a)', 'b)', 'c)', 'd)', 'e)'];
+
+// Câu tự luận kiểu đề HSG: "Câu 1 (4,0 điểm)." rồi các ý a), b), c) mỗi ý một dòng.
+function essayQuestion(no, opts) {
+  const diem = (opts && opts.diem) || '2,0';
+  const subs = (opts && opts.subs) || 0;
+  let out = textPara(`Câu ${no} (${diem} điểm). `, { bold: true, spaceAfter: 0 });
+  for (let i = 0; i < subs; i += 1) {
+    out += textPara(`${SUB_LABELS[i]} `, { ind: 284, spaceAfter: 0 });
+  }
+  return out + emptyPara();
 }
 
 const QUESTION_BUILDERS = { mc: multipleChoice, tf: trueFalse, sa: shortAnswer };
@@ -156,6 +232,35 @@ function questionBlock(kind, start, count, cols) {
   let out = '';
   for (let i = 0; i < count; i += 1) out += build(start + i, cols);
   return wrapBody(out);
+}
+
+function essayBlock(start, count, opts) {
+  let out = '';
+  for (let i = 0; i < count; i += 1) out += essayQuestion(start + i, opts);
+  return wrapBody(out);
+}
+
+// Bảng hướng dẫn chấm (Câu | Ý | Nội dung | Điểm) và bảng cấu trúc đề
+// (Câu | Nội dung | Điểm) — hai bảng mọi đề HSG đều phải kèm.
+function gradingTable(rowCount, withSubColumn) {
+  const heads = withSubColumn ? ['Câu', 'Ý', 'Nội dung', 'Điểm'] : ['Câu', 'Nội dung', 'Điểm'];
+  const narrow = 700;
+  const points = 1100;
+  const wide = TWIP_PAGE - points - narrow * (withSubColumn ? 2 : 1);
+  const widths = withSubColumn
+    ? [narrow, narrow, wide, points]
+    : [narrow, wide, points];
+
+  const headRow = tr(
+    heads
+      .map((label, i) => tc(widths[i], textPara(label, { jc: 'center', bold: true })))
+      .join('')
+  );
+  let rows = headRow;
+  for (let i = 0; i < rowCount; i += 1) {
+    rows += tr(widths.map((w) => tc(w, '')).join(''), 400);
+  }
+  return wrapBody(tbl(widths, rows, true));
 }
 
 // ---------------------------------------------------------------- bảng đáp án

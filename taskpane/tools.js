@@ -2,6 +2,33 @@
 // Mỗi tab tự dựng form riêng rồi gọi Pane.insertOoxml() (định nghĩa ở taskpane.js).
 
 const HEADER_KEY = 'mathSymbols.examHeader';
+const FONT_KEY = 'mathSymbols.font';
+
+const FONT_CHOICES = ['Times New Roman', 'Cambria', 'Arial', 'Calibri'];
+
+// Phông áp cho mọi khối add-in chèn ra, không riêng tab Đề thi — nên nạp ngay khi
+// script chạy, kể cả khi giáo viên chưa mở tab đó lần nào.
+function loadFontSetting() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(FONT_KEY));
+    if (saved) setFont(saved.name, saved.size);
+  } catch {
+    // hỏng localStorage thì dùng mặc định Times New Roman 12
+  }
+}
+
+function saveFontSetting() {
+  const name = val('font-name') || FONT.name;
+  const size = parseFloat(val('font-size')) || FONT.size;
+  setFont(name, size);
+  try {
+    localStorage.setItem(FONT_KEY, JSON.stringify({ name, size }));
+  } catch {
+    // không lưu được thì vẫn áp dụng cho phiên hiện tại
+  }
+}
+
+loadFontSetting();
 
 function h(tag, attrs, children) {
   const node = document.createElement(tag);
@@ -33,11 +60,12 @@ function button(label, onClick, primary) {
 
 function select(options, value, onChange) {
   const node = h('select', { onchange: onChange });
-  options.forEach(([val, label]) => {
-    const opt = h('option', { value: val, text: label });
-    if (val === value) opt.selected = true;
-    node.appendChild(opt);
+  options.forEach(([optValue, label]) => {
+    node.appendChild(h('option', { value: optValue, text: label }));
   });
+  // Phải đặt sau khi đã gắn đủ option: gán .selected cho option còn rời khỏi cây
+  // DOM sẽ bị trình duyệt xoá khi option được chèn vào select.
+  node.value = value;
   return node;
 }
 
@@ -57,16 +85,36 @@ const num = (id, fallback) => {
 
 // ---------------------------------------------------------------- tab Đề thi
 
+const STYLE_KEY = 'mathSymbols.examStyle';
+
+// Ô nào chỉ dùng cho một kiểu đề thì đánh dấu bằng `only`.
 const HEADER_FIELDS = [
-  ['so', 'Sở GD&ĐT', 'SỞ GD&ĐT ...'],
-  ['truong', 'Trường', 'TRƯỜNG THPT ...'],
-  ['kyThi', 'Kỳ thi', 'ĐỀ KIỂM TRA CUỐI HỌC KỲ I'],
+  ['so', 'Sở / Phòng GD&ĐT', 'PHÒNG GD&ĐT ...'],
+  ['truong', 'Trường', 'TRƯỜNG THPT ...', 'tn'],
+  ['kyThi', 'Kỳ thi', 'ĐỀ GIAO LƯU HỌC SINH GIỎI CẤP HUYỆN'],
   ['mon', 'Môn', 'Toán'],
-  ['khoi', 'Lớp', '12'],
-  ['thoiGian', 'Thời gian (phút)', '90'],
-  ['soTrang', 'Số trang', '4'],
-  ['maDe', 'Mã đề', '101'],
+  ['khoi', 'Lớp', '6'],
+  ['namHoc', 'Năm học', '2022-2023', 'tl'],
+  ['thoiGian', 'Thời gian (phút)', '120'],
+  ['soTrang', 'Số trang', '01'],
+  ['maDe', 'Mã đề', '101', 'tn'],
 ];
+
+function loadStyle() {
+  try {
+    return localStorage.getItem(STYLE_KEY) || 'tl';
+  } catch {
+    return 'tl';
+  }
+}
+
+function saveStyle(style) {
+  try {
+    localStorage.setItem(STYLE_KEY, style);
+  } catch {
+    // không lưu được thì chỉ mất phần nhớ giữa các lần mở
+  }
+}
 
 function loadHeader() {
   try {
@@ -92,24 +140,71 @@ function readHeaderForm() {
 function renderExamPanel(panel) {
   const saved = loadHeader();
 
-  panel.appendChild(heading('Đầu đề thi'));
-  HEADER_FIELDS.forEach(([key, label, placeholder]) => {
-    panel.appendChild(
-      fieldRow(label, input(`hdr-${key}`, saved[key], { placeholder }))
-    );
-  });
+  panel.appendChild(heading('Phông chữ'));
+  const fontSel = select(
+    FONT_CHOICES.map((f) => [f, f]),
+    FONT.name,
+    saveFontSetting
+  );
+  fontSel.id = 'font-name';
+  panel.appendChild(fieldRow('Phông', fontSel));
+  const sizeBox = input('font-size', String(FONT.size), { type: 'number', min: 8, max: 20 });
+  sizeBox.addEventListener('input', saveFontSetting);
+  panel.appendChild(fieldRow('Cỡ chữ (pt)', sizeBox));
   panel.appendChild(
-    button('Chèn đầu đề thi', () => Pane.insertOoxml(examHeader(readHeaderForm()), 'Đã chèn đầu đề thi'), true)
+    note('Áp cho mọi thứ add-in chèn ra ở cả ba tab công cụ. Công thức toán vẫn dùng Cambria Math như Word quy định.')
   );
 
-  panel.appendChild(heading('Tiêu đề phần'));
+  panel.appendChild(heading('Đầu đề thi'));
+  let style = loadStyle();
+  const styleSel = select(
+    [
+      ['tl', 'Tự luận / học sinh giỏi'],
+      ['tn', 'Trắc nghiệm (có mã đề)'],
+    ],
+    style,
+    (e) => {
+      style = e.target.value;
+      saveStyle(style);
+      applyStyle();
+    }
+  );
+  panel.appendChild(fieldRow('Kiểu đề', styleSel));
+
+  const rows = {};
+  HEADER_FIELDS.forEach(([key, label, placeholder, only]) => {
+    const row = fieldRow(label, input(`hdr-${key}`, saved[key], { placeholder }));
+    rows[key] = { row, only };
+    panel.appendChild(row);
+  });
+
+  // Ẩn ô không thuộc kiểu đề đang chọn, và bật/tắt các nút chỉ hợp với một kiểu.
+  function applyStyle() {
+    Object.values(rows).forEach(({ row, only }) => {
+      row.classList.toggle('hidden', !!only && only !== style);
+    });
+    panel.querySelectorAll('[data-only]').forEach((el) => {
+      el.classList.toggle('hidden', el.dataset.only !== style);
+    });
+  }
+
   panel.appendChild(
+    button(
+      'Chèn đầu đề thi',
+      () => Pane.insertOoxml(examHeader(readHeaderForm(), style), 'Đã chèn đầu đề thi'),
+      true
+    )
+  );
+
+  const sections = h('div', { 'data-only': 'tn' }, [
+    heading('Tiêu đề phần'),
     h('div', { class: 'btn-row' }, [
       button('PHẦN I', () => Pane.insertOoxml(sectionHeading(1), 'Đã chèn tiêu đề Phần I')),
       button('PHẦN II', () => Pane.insertOoxml(sectionHeading(2), 'Đã chèn tiêu đề Phần II')),
       button('PHẦN III', () => Pane.insertOoxml(sectionHeading(3), 'Đã chèn tiêu đề Phần III')),
-    ])
-  );
+    ]),
+  ]);
+  panel.appendChild(sections);
 
   panel.appendChild(heading('Chèn câu hỏi'));
   panel.appendChild(fieldRow('Bắt đầu từ câu', input('q-start', '1', { type: 'number', min: 1 })));
@@ -123,30 +218,75 @@ function renderExamPanel(panel) {
     '2'
   );
   colsSel.id = 'q-cols';
-  panel.appendChild(fieldRow('Xếp phương án', colsSel));
+  const colsRow = fieldRow('Xếp phương án', colsSel);
+  colsRow.dataset.only = 'tn';
+  panel.appendChild(colsRow);
 
-  const insertQuestions = (kind, label) => {
-    const cols = num('q-cols', 2);
-    const start = Math.max(1, num('q-start', 1));
-    const count = Math.min(100, Math.max(1, num('q-count', 1)));
-    Pane.insertOoxml(questionBlock(kind, start, count, cols), `Đã chèn ${count} ${label}`);
+  const diemRow = fieldRow('Điểm mỗi câu', input('q-diem', '2,0', { placeholder: '2,0' }));
+  diemRow.dataset.only = 'tl';
+  panel.appendChild(diemRow);
+  const subsRow = fieldRow('Số ý (a, b, c...)', input('q-subs', '0', { type: 'number', min: 0, max: 5 }));
+  subsRow.dataset.only = 'tl';
+  panel.appendChild(subsRow);
+
+  const advance = (start, count) => {
     const startBox = document.getElementById('q-start');
     if (startBox) startBox.value = String(start + count);
   };
+  const range = () => ({
+    start: Math.max(1, num('q-start', 1)),
+    count: Math.min(100, Math.max(1, num('q-count', 1))),
+  });
 
-  panel.appendChild(
+  const insertQuestions = (kind, label) => {
+    const { start, count } = range();
+    Pane.insertOoxml(questionBlock(kind, start, count, num('q-cols', 2)), `Đã chèn ${count} ${label}`);
+    advance(start, count);
+  };
+
+  const insertEssay = () => {
+    const { start, count } = range();
+    const opts = { diem: val('q-diem').trim() || '2,0', subs: num('q-subs', 0) };
+    Pane.insertOoxml(essayBlock(start, count, opts), `Đã chèn ${count} câu tự luận`);
+    advance(start, count);
+  };
+
+  const essayButtons = h('div', { 'data-only': 'tl' }, [
+    h('div', { class: 'btn-row' }, [
+      button('Câu tự luận (có điểm)', insertEssay, true),
+      button('Dòng kết đề (…Hết…)', () => Pane.insertOoxml(examFooter(), 'Đã chèn phần kết đề')),
+    ]),
+    note(
+      'Chèn ra "Câu n (2,0 điểm)." rồi các ý a), b), c) mỗi ý một dòng — bấm vào sau dấu ' +
+        'chấm để gõ nội dung. Ô "Bắt đầu từ câu" tự tăng sau mỗi lần chèn.'
+    ),
+    heading('Bảng hướng dẫn chấm'),
+    fieldRow('Số dòng trống', input('hdc-rows', '10', { type: 'number', min: 1, max: 60 })),
+    h('div', { class: 'btn-row' }, [
+      button('Câu | Ý | Nội dung | Điểm', () =>
+        Pane.insertOoxml(gradingTable(Math.max(1, num('hdc-rows', 10)), true), 'Đã chèn bảng hướng dẫn chấm')
+      ),
+      button('Câu | Nội dung | Điểm', () =>
+        Pane.insertOoxml(gradingTable(Math.max(1, num('hdc-rows', 10)), false), 'Đã chèn bảng cấu trúc đề')
+      ),
+    ]),
+  ]);
+  panel.appendChild(essayButtons);
+
+  const mcButtons = h('div', { 'data-only': 'tn' }, [
     h('div', { class: 'btn-row' }, [
       button('Trắc nghiệm A–D', () => insertQuestions('mc', 'câu trắc nghiệm'), true),
       button('Đúng / Sai', () => insertQuestions('tf', 'câu đúng/sai')),
       button('Trả lời ngắn', () => insertQuestions('sa', 'câu trả lời ngắn')),
-    ])
-  );
-  panel.appendChild(
+    ]),
     note(
       'Câu hỏi chèn ra để trống phần nội dung — bấm vào sau "Câu n:" để gõ đề, ' +
         'sau mỗi nhãn A. B. C. D. để gõ phương án. Ô "Bắt đầu từ câu" tự tăng sau mỗi lần chèn.'
-    )
-  );
+    ),
+  ]);
+  panel.appendChild(mcButtons);
+
+  applyStyle();
 }
 
 // -------------------------------------------------- tab Bảng biến thiên

@@ -11,7 +11,11 @@ Task pane add-in cho Microsoft Word (Windows) giúp chèn nhanh ký hiệu toán
   - *Ngoặc & ma trận*: 6 loại ngoặc, tổ hợp, hệ 2–3 phương trình, ma trận 2x2/3x3, định thức, vector cột.
   - *Hàm & dấu*: lim, max, sin/cos/tan/ln, log cơ số, đạo hàm thường và riêng, vector, hat, chấm trên, gạch trên/dưới, ngoặc nhọn trên/dưới.
 - **Ba tab công cụ soạn đề thi**:
-  - *Đề thi*: chèn đầu đề (Sở/Trường, kỳ thi, môn, thời gian, mã đề — nhớ lại cho lần sau), tiêu đề Phần I/II/III theo cấu trúc đề THPT, và chèn hàng loạt câu trắc nghiệm A–D (1/2/4 cột), câu đúng/sai a–d, câu trả lời ngắn với số câu tự tăng.
+  - *Đề thi*: chọn **Times New Roman cỡ 12** (hoặc phông/cỡ khác) áp cho mọi thứ add-in chèn ra, và chọn **kiểu đề**:
+    - *Tự luận / học sinh giỏi*: đầu đề Phòng GD&ĐT + ĐỀ CHÍNH THỨC / kỳ thi / lớp + năm học / MÔN / thời gian "(không kể thời gian giao đề)" / số trang; câu dạng `Câu 1 (4,0 điểm).` kèm các ý a) b) c); dòng kết `…Hết…` với lời dặn và chỗ ghi họ tên; bảng hướng dẫn chấm `Câu | Ý | Nội dung | Điểm` và bảng cấu trúc đề `Câu | Nội dung | Điểm`.
+    - *Trắc nghiệm*: đầu đề Sở/Trường có mã đề, tiêu đề Phần I/II/III theo cấu trúc đề THPT, chèn hàng loạt câu trắc nghiệm A–D (1/2/4 cột), câu đúng/sai a–d, câu trả lời ngắn.
+
+    Cả hai kiểu đều nhớ lại nội dung đã nhập cho lần mở sau, và ô "Bắt đầu từ câu" tự tăng sau mỗi lần chèn.
   - *Bảng BT*: dựng bảng biến thiên (3 dòng) hoặc bảng xét dấu (2 dòng) — nhập nghiệm, chọn dấu từng khoảng, xem trước ngay trong task pane rồi chèn ra thành bảng Word thật; mũi tên ↗ ↘ tự suy ra từ dấu đạo hàm.
   - *Đáp án*: chèn bảng đáp án từ chuỗi `1A 2B 3C` hoặc `ABCD...` (cả đáp án đúng/sai kiểu `1 ĐSSĐ`), bảng đáp án trống, đánh số lại toàn bộ câu hỏi, trộn thứ tự câu hỏi và chuyển bảng đáp án cũ sang thứ tự mới.
 - Tìm kiếm theo tên tiếng Việt hoặc tiếng Anh (`alpha`, `integral`, `phân số`...).
