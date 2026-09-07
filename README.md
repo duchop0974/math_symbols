@@ -130,10 +130,16 @@ Muốn triển khai hàng loạt không qua giao diện, dùng `installer\Regist
 Cần [Inno Setup 6](https://jrsoftware.org/isinfo.php) (`winget install --id JRSoftware.InnoSetup`):
 
 ```powershell
-powershell -File installer\build.ps1
+powershell -ExecutionPolicy Bypass -File installer\build.ps1
 ```
 
-Kết quả: `dist\MathSymbolsSetup.exe`.
+Cần `-ExecutionPolicy Bypass` vì Windows mặc định chặn chạy file `.ps1`; cờ này chỉ áp cho đúng tiến trình đó, không đổi thiết lập máy. Thiếu nó sẽ báo *"running scripts is disabled on this system"* trước khi script kịp chạy. Cách khác là gọi thẳng trình biên dịch:
+
+```powershell
+& "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe" installer\MathSymbols.iss
+```
+
+Kết quả: `dist\MathSymbolsSetup.exe`. Lưu ý tương tự khi chạy `set-host.ps1` và `Register-Addin.ps1`.
 
 ### Lựa chọn thay thế
 
